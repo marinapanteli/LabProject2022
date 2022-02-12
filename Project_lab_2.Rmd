@@ -38,8 +38,8 @@ exons<-as.data.frame(exons)
 
 #get df of exon ranges
 
-your_length <- dim(all2)[1]
-var_location <- rep(NA, your_length)
+dim_length <- dim(all2)[1]
+var_location <- rep(NA, dim_length)
 
 a<-all2[,][1]
 for (i in 1:dim(a)[1]) {
@@ -49,9 +49,9 @@ for (i in 1:dim(a)[1]) {
   var_location[i]<-as.numeric(var_location_now)
 }
 
-is_var_in_exon<-rep(NA, your_length)
+is_var_in_exon<-rep(NA, dim_length)
 
-for (j in 1:your_length) {
+for (j in 1:dim_length) {
   
   is_var_in_exon[j] <- (any((var_location[j]>exons$start) & (var_location[j]<exons$end)))
 }
@@ -65,18 +65,74 @@ df_filtered_vars<- df_filtered_variants[,1]
 
 ```
 
-## Find original amino acid sequences (to be edited)
+## Find original amino acid sequences
 
 ```{r pressure, echo=FALSE}
 library(BSgenome.Hsapiens.UCSC.hg38)
+library(Biostrings)
 x <- import("wtc11_with_cds_refined.gtf")
 x <- x[x$type=="CDS"]
 
 gs <- getSeq(Hsapiens, x)
-d <- DNAString(paste0(as.character(gs[1:2]), collapse=""))
-translate(d)
 
-getSeq(Hsapiens, names="chr1", start=15820, width=10)
+
+trscr_id<-as.data.frame(x)
+trscr_id<-trscr_id[,11]
+
+l<-1
+
+m<-1
+
+trscr_idxes <- vector()
+
+while (m<length(trscr_id)) {
+  
+  if (trscr_id[l+1]==trscr_id[l]) {
+    
+    l<-l+1
+  }else {
+    
+    trscr_idxes <- c(trscr_idxes,l)
+    l<-l+1
+    
+  }
+ m<-m+1   
+  
+}
+
+
+n<- 1
+p<-1
+d<-vector()
+
+while (p<=length(trscr_idxes)) {
+  
+p
+n
+d <- c(d,DNAString(paste0(as.character(gs[n:trscr_idxes[p]]), collapse="")) )
+
+n<-trscr_idxes[p]+1
+
+p<-p+1
+d
+}
+
+
+original_seq<-vector()
+
+for (q in 1:length(d)) {
+  
+  original_seq <- c(original_seq,as.character(translate(DNAString(as.character(d[[q]])))))
+  
+}
+
+
+#translate(DNAString("ATG"))
+
+
+#getSeq(Hsapiens, names="chr1", start=15820, width=10)
+
+
 ```
 
 ## Find changed amino acid sequences (to be edited)
@@ -85,24 +141,3 @@ getSeq(Hsapiens, names="chr1", start=15820, width=10)
 ```
 
 
-## The following is redundant
-## Filtering out introns from wtc (?)
-
-```{r pressure, echo=FALSE}
-#library(BSgenome.Hsapiens.UCSC.hg38)
-
-#gtf <- import("wtc11_corrected.gtf")
-#gtf <- gtf[gtf$type=="exon"]
-#gtf <- gtf[gtf$transcript_id=="PB.1.13"]
-
-#dss <- readDNAStringSet("wtc11_corrected.fasta")
-#dss <- dss[names(dss)=="PB.1.13"]
-
-#rev(gs <- getSeq(Hsapiens, gtf))
-
-#paste0(as.character(rev(gs)), collapse="") == as.character(dss)
-
-```
-
-
-## Filtering 
