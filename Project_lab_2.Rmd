@@ -2,7 +2,9 @@
 title: "Project_lab2"
 author: "Marina Panteli"
 date: "10/02/2022"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -26,7 +28,7 @@ all2<-all1[all1$default=="TRUE",]
 #View(all2)
 #table(all2$default)
 ```
-## Filtering vcf file to reflect only exonic regions of the genome
+## Filtering vcf file to keep only exonic regions
 ```{r pressure, echo=FALSE}
 
 library(TxDb.Hsapiens.UCSC.hg38.knownGene)
@@ -107,14 +109,12 @@ d<-vector()
 
 while (p<=length(trscr_idxes)) {
   
-p
-n
 d <- c(d,DNAString(paste0(as.character(gs[n:trscr_idxes[p]]), collapse="")) )
 
 n<-trscr_idxes[p]+1
 
 p<-p+1
-d
+
 }
 
 
@@ -135,9 +135,125 @@ for (q in 1:length(d)) {
 
 ```
 
-## Find changed amino acid sequences (to be edited)
+## Find changed nucleotide sequences (SNPs)
 ```{r pressure, echo=FALSE}
 
-```
+var_length <- vector()
+orig_length <- vector()
 
+for (r in 1:length(df_filtered_vars)) {
+ 
+  a1 <- df_filtered_vars[r]
+
+  orig_length[r] <-gregexpr(pattern ='/',a1)[[1]][1]-gregexpr(pattern ='_',a1)[[1]][1]-1
+
+  var_length[r] <- str_length(a1)-gregexpr(pattern ='/',a1)[[1]][1] 
+
+}
+
+SNP_detection <- vector()
+
+for (r in 1:length(df_filtered_vars)) {
+ 
+  if (orig_length[r]==var_length[r]) {
+    
+    SNP_detection [r]<- TRUE
+    
+  }else{
+    
+    SNP_detection[r]<- FALSE
+  }
+
+}
+
+table(SNP_detection)/sum(table(SNP_detection)) #percentage of SNPs
+
+gs_new <- gs
+
+#
+s <-1
+#
+#for (s in 1:length(SNP_detection)) {
+  
+  if (SNP_detection[s] == TRUE) {
+    
+    for (t in 1:length(gs)) {
+      
+      if ((as.numeric (str_match(df_filtered_vars[s], ":\\s*(.*?)\\s*_")[2])<=gs[t]@ranges@start+gs[t]@ranges@width-1) && (as.numeric (str_match(df_filtered_vars[s], ":\\s*(.*?)\\s*_")[2])>=gs[t]@ranges@start)) {  
+        
+        
+        gs_new[[t]][as.numeric (str_match(df_filtered_vars[s], ":\\s*(.*?)\\s*_")[2])-gs_new[t]@ranges@start+1] <- substr(sub("^[^/]*", "", df_filtered_vars[s]),2,2)       ####
+        
+        t
+        s
+      }
+      
+    }
+    
+  }
+  
+#}
+
+
+```
+## Find changed amino acid sequence
+
+
+```{r pressure, echo=FALSE}
+library(BSgenome.Hsapiens.UCSC.hg38)
+library(Biostrings)
+x <- import("wtc11_with_cds_refined.gtf")
+x <- x[x$type=="CDS"]
+
+
+
+
+trscr_id<-as.data.frame(x)
+trscr_id<-trscr_id[,11]
+
+l<-1
+
+m<-1
+
+trscr_idxes <- vector()
+
+while (m<length(trscr_id)) {
+  
+  if (trscr_id[l+1]==trscr_id[l]) {
+    
+    l<-l+1
+  }else {
+    
+    trscr_idxes <- c(trscr_idxes,l)
+    l<-l+1
+    
+  }
+ m<-m+1   
+  
+}
+
+
+n<- 1
+p<-1
+d<-vector()
+
+while (p<=length(trscr_idxes)) {
+  
+d <- c(d,DNAString(paste0(as.character(gs_new[n:trscr_idxes[p]]), collapse="")) )
+
+n<-trscr_idxes[p]+1
+
+p<-p+1
+
+}
+
+
+new_seq<-vector()
+
+for (q in 1:length(d)) {
+  
+  new_seq <- c(new_seq,as.character(translate(DNAString(as.character(d[[q]])))))
+  
+}
+```
 
