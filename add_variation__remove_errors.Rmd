@@ -203,7 +203,10 @@ error_read <- rowSums(error_find)
 
 error_read <- which(error_read != 0)
 
-z <- z[-error_read,]
+if (length(error_read)!=0) {
+z <- z[-error_read,]  
+}
+
 
 #####
 
