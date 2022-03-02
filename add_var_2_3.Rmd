@@ -185,7 +185,10 @@ width(dss_ref)
 
 ref_seq <- DNAStringSet(paste(as.character(dss_ref), collapse=""))
 nchar(ref_seq)
-if (x_exs$PB.749.1@strand@values=='+') {
+
+# 
+
+if (x_exs$PB.749.1@strand@values=='-') {
   ref_seq<-reverseComplement(ref_seq)
 }
 
