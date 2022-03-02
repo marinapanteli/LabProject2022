@@ -186,7 +186,7 @@ width(dss_ref)
 ref_seq <- DNAStringSet(paste(as.character(dss_ref), collapse=""))
 nchar(ref_seq)
 
-# 
+# Check strand direction and convert to + if -
 
 if (x_exs$PB.749.1@strand@values=='-') {
   ref_seq<-reverseComplement(ref_seq)
@@ -211,7 +211,7 @@ length(to_insert[[1]])==length(mtt)
 seqs <- list()
 for(i in 1:length(to_insert)) { # loop through alleles
   seqs[[i]] <- ref_seq
-  for(j in length(mtt):1) {     # loop through variations
+  for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
     subseq(seqs[[i]], start=start(mtt)[j], 
            end=end(mtt)[j]) <- to_insert[[i]][j]
     # remove '-'
@@ -230,27 +230,28 @@ writeXStringSet(seqs, "PB.749.1.fasta")
 
 
 # insertion example
-#(gr <- GRanges("chr1",
-#              IRanges(start = 15903,
-#                      width = 2),
-#              strand = "+"))
+
+(gr <- GRanges("chr1",
+              IRanges(start = 15903,
+                      width = 2),
+              strand = "+"))
 
 # read in BAM alignments only for this region
-#sbp <- ScanBamParam(which=gr)
-#bamWhat(sbp) <- "seq"
-#ga <- readGAlignments("aln_s.bam", param=sbp, #use.names = TRUE)
+sbp <- ScanBamParam(which=gr)
+bamWhat(sbp) <- "seq"
+ga <- readGAlignments("aln_s.bam", param=sbp, #use.names = TRUE)
 
-#na <- narrowAlignments(ga, gr)
-#mcols(na)$seq
-
-
+na <- narrowAlignments(ga, gr)
+mcols(na)$seq
 
 
-# extractAt(ref_seq, mtt)
-# replaceAt(ref_seq, )
 
 
-# pc <- predictCoding(v, txdb, seqSource=Hsapiens)
-# pc_s <- pc[pc$REFAA!=pc$VARAA]
+## extractAt(ref_seq, mtt)
+## replaceAt(ref_seq, )
+
+
+## pc <- predictCoding(v, txdb, seqSource=Hsapiens)
+## pc_s <- pc[pc$REFAA!=pc$VARAA]
 
 ```
