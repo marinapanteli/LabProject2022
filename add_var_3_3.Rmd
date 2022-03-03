@@ -1,0 +1,290 @@
+---
+title: "Bit of playing around with inserting variation to transcripts"
+author: "Mark Robinson"
+date: "28/02/2022"
+output:
+  html_document: default
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Load libraries
+
+```{r libraries}
+suppressPackageStartupMessages({
+  library(VariantAnnotation)
+  library(GenomicFeatures)
+  library(BSgenome.Hsapiens.UCSC.hg38)
+  library(Biostrings)
+  library(ensembldb)
+  library(Rsamtools)
+  library(GenomicAlignments)
+  library(CrispRVariants)
+  library(stringr)
+})
+```
+
+## Filtering VCF file to keep only high coverage and good quality variants
+
+```{r vcf_filter}
+(v <- readVcf("deepvariant_calls_pass.vcf.gz"))
+
+# plot depth versus quality score (?)
+plot(mcols(v)$QUAL,geno(v)[["DP"]][,1], pch=".", log="y")
+
+
+keep <- geno(v)$DP[,1] > 10 &  mcols(v)$QUAL > 40 # keep only variants with depth > 10
+table(keep)
+v <- v[keep]
+
+```
+
+## Focus on 1 gene
+
+```{r import}
+
+# z <- import("wtc11_with_cds_refined.gtf")
+# z <- z[z$type=="CDS"]
+
+x <- import("wtc11_corrected.gtf")
+txdb <- makeTxDbFromGRanges(x)
+
+
+
+# calculate how many genes/transcripts need to be modified
+
+fop <- findOverlapPairs(x,v)
+
+length(unique(x$gene_id))
+length(unique(first(fop)$transcript_id))
+length(unique(first(fop)$gene_id))
+
+
+# extract exons
+x_ex <- x[x$type=="exon" & seqnames(x) != "chrM"]
+g <- grepl("PB.749.", x_ex$transcript_id, 
+           fixed = TRUE)
+x_ex <- x_ex[g]
+seqlevels(x_ex) <- seqlevels(x_ex)[-25]
+x_ex
+
+
+gr <- GRanges(seqnames(x_ex)[1],
+              IRanges(start = min(start(x_ex)),
+                      end = max(end(x_ex))),
+              strand = strand(x_ex)[1])
+gr
+
+# # fo <- findOverlaps(v, x_ex)
+(fop <- findOverlapPairs(rowRanges(v), x_ex))
+
+# read in BAM alignments only for this region
+sbp <- ScanBamParam(which=gr,
+                    what=scanBamWhat())
+# sb <- scanBam("aln_s.bam", param=sbp)[[1]]
+
+ga <- readGAlignments("aln_s.bam", param=sbp, use.names = TRUE)
+(variation_regs <- unique(first(fop)))
+
+ss <- stackStringsFromGAlignments(ga, 
+                                  variation_regs[1]) # variation_regs[1] limited to one position of variation
+table(ss)
+getSeq(Hsapiens, variation_regs[1]) #OOOOK the original nucleotide at the variation position
+
+
+# get regions of reads
+rngs <- cigarRangesAlongReferenceSpace(cigar(ga), 
+                                       pos = start(ga),
+                                       drop.empty.ranges = FALSE,
+                                       N.regions.removed = FALSE,
+                                       with.ops = TRUE,
+                                       reduce.ranges = FALSE)
+#HERE
+names(rngs) <- names(ga)
+#HERE
+rngs # ranges of all bam alignment reads (in their segments)
+
+
+rngs <- lapply(rngs, function(u) {
+  nm <- names(u)
+  names(u) <- NULL
+  u[nm != "N"]
+})
+rngs <- IRangesList(rngs) # exclude N regions
+#HERE
+#HERE
+x_exs <- split(x_ex, x_ex$transcript_id)
+x_exs
+
+# intersect all reads with one transcript
+# intersect(rngs, ranges(x_exs)[[1]])
+
+
+# intersect all reads with all transcripts, form matrix
+m <- matrix(0, ncol=length(variation_regs), 
+            nrow = length(rngs),
+            dimnames = list(names(rngs),
+                            names(variation_regs)))
+
+# populate the m matrix from the overlaps (clunky, but does the job)
+rngs_u <- unlist(rngs)
+fo <- findOverlaps(rngs_u, ranges(variation_regs))
+pop <- split(subjectHits(fo), names(rngs_u)[queryHits(fo)]) # which variations in a certain alignment read, and below notate with 0/1 if absent/present
+for(i in 1:length(pop)) {
+  m[names(pop)[i],unique(pop[[i]])] <- 1
+}
+
+
+# focus on one transcript
+f <- first(fop)[second(fop)$transcript_id=="PB.749.1"]
+(nm <- names(f)) # which of the not necessarily unique variants are in transcript PB.749.1
+
+
+# only take reads that overlap all variation of this transcript
+w <- rowSums(m[,nm,drop=FALSE])==length(nm) #HERE
+(rds <- rownames(m)[w]) # which of the alignment reads span across all positions of variation of the transcript 
+
+
+ga_s <- ga[names(ga) %in% rds] #HERE #subset for transcript of interest
+#z <- sapply(nm, function(u) {
+#  ss <- stackStringsFromGAlignments(ga_s,
+#                                    #variation_regs[u])
+#  as.character(ss)
+#})
+##rownames(z) <- rownames(m)[w]
+##z # For the variations, see the alternative alleles of the alignment reads that overlap in the location of them all
+#HERE  
+# table(ss)
+getSeq(Hsapiens, variation_regs[nm]) # Also visible before the '/' of the nm string. It is the original nucleotides
+
+
+
+# sapply(x_exs, NROW)
+# sapply(rngs, NROW)
+
+
+# useful for the next part of the puzzle: getting the variation into the transcript sequences
+
+# spot check
+mapToTranscripts(x_exs[["PB.749.1"]], x_exs["PB.749.1"])
+
+# extract transcript seq from genome (just 1 transcript)
+dss_ref <- getSeq(Hsapiens, x_ex[x_ex$transcript_id=="PB.749.1"])
+width(dss_ref)
+
+# put the exons together -->CHECK if x_exs$PB.749.1@strand@values=='-'
+
+ref_seq <- DNAStringSet(paste(as.character(dss_ref), collapse=""))
+nchar(ref_seq)
+
+# Check strand direction and convert to + if -
+
+if (x_exs$PB.749.1@strand@values=='-') {
+  ref_seq<-reverseComplement(ref_seq)
+}
+
+names(ref_seq) <- "PB.749.1"
+
+# ref_ranges <- IRanges(start=1, end=nchar(ref_seq))
+
+# positions where we need to insert variation, transcript coords
+(mtt <- mapToTranscripts(variation_regs[nm], x_exs["PB.749.1"]))
+
+# spot check
+getSeq(ref_seq, mtt)
+
+# variation to insert
+#(to_insert <- strsplit(names(alleles), "__", fixed = #TRUE))
+
+#length(to_insert[[1]])==length(mtt)
+
+st=variation_regs[nm]@ranges@start
+
+na<-vector()
+  
+for (i in st) {
+ 
+  (gr <- GRanges("chr1",
+              IRanges(start = i,
+                      width = 2),
+              strand = "+"))
+
+#read in BAM alignments only for this region
+sbp <- ScanBamParam(which=gr)
+bamWhat(sbp) <- "seq"
+ga <- readGAlignments("aln_s.bam", param=sbp, use.names = TRUE)
+
+na <- c(na, as.data.frame(narrowAlignments(ga, gr))) #FIND BETTER WAY TO STORE THE VARIATIONS OF ALL READS ACROSS ALL POSITIONS OF VARIATIONS (0)
+#mcols(na)$seq
+
+}
+
+
+#CREATE z variation combinations (1)
+
+#CREATE alleles (2) with below
+
+##alleles <- table(apply(z, 1, paste, collapse="__")) # The different combinations that are generated by the different reads
+##alleles <- sort(alleles, decreasing = TRUE)
+##alleles <- alleles[seq_len(min(2,length(alleles)))]
+#(to_insert <- strsplit(names(alleles), "__", fixed = TRUE))
+
+
+
+
+
+
+# insert variation: replace TWO bases (3) 
+seqs <- list()
+for(i in 1:length(to_insert)) { # loop through alleles
+  seqs[[i]] <- ref_seq
+  for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
+    subseq(seqs[[i]], start=start(mtt)[j], 
+           end=end(mtt)[j]) <- to_insert[[i]][j]
+    # remove '-'
+    seqs[[i]] <- DNAStringSet(gsub("-","",seqs[[i]]))
+  }
+  names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])
+}
+seqs <- unlist(DNAStringSetList(seqs))
+
+
+seqs
+writeXStringSet(seqs, "PB.749.1.fasta")
+
+
+
+
+
+# insertion example
+
+#(gr <- GRanges("chr1",
+#              IRanges(start = 15903,
+#                      width = 2),
+#              strand = "+"))
+
+# read in BAM alignments only for this region
+#sbp <- ScanBamParam(which=gr)
+#bamWhat(sbp) <- "seq"
+#ga <- readGAlignments("aln_s.bam", param=sbp, #use.names = TRUE)
+
+#na <- narrowAlignments(ga, gr)
+#mcols(na)$seq
+
+
+
+
+## extractAt(ref_seq, mtt)
+## replaceAt(ref_seq, )
+
+
+## pc <- predictCoding(v, txdb, seqSource=Hsapiens)
+## pc_s <- pc[pc$REFAA!=pc$VARAA]
+
+```
