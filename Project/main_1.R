@@ -29,9 +29,14 @@ v <- v[keep]
 #all_genes<-unique(x$gene_id) # to get all genes
 
 system.time({
-  gene <- "PB.749."
-  new_seqs <- generate_variant_transcripts(v,x,
-                                           bam_file = alns, gene, verbose = FALSE) # for 1 gene
+#  gene <- "PB.749."
+    txdb <- makeTxDbFromGRanges(x)
+    bb<-(genes(txdb))$gene_id # to get all genes
+    X<-sapply(bb,paste0,".",USE.NAMES=F) # to get all genes
+    oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
+                                                bam_file = alns, verbose = TRUE)
+#    new_seqs <- generate_variant_transcripts(v,x,
+#                                           bam_file = alns, gene, verbose = TRUE) # for 1 gene
   #old_seqs <- generate_old_transcripts(v,x,
    #                                        bam_file = alns, gene, verbose = FALSE) # for 1 gene
   

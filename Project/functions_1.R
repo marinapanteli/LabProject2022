@@ -45,11 +45,19 @@ seqs_with_var <- function(to_insert,ref_seq,mtt,x_ex,tr){
   for(i in 1:length(to_insert)) { # loop through alleles
     seqs[[i]] <- ref_seq
     for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
+      
+      if(start(mtt)[j]==width(ref_seq)){
+        subseq(seqs[[i]], start=start(mtt)[j], 
+               end=start(mtt)[j]) <- to_insert[[i]][j]}
+        
+      else {
+      
       subseq(seqs[[i]], start=start(mtt)[j], 
-             end=start(mtt)[j]+1) <- to_insert[[i]][j]
+             end=start(mtt)[j]+1) <- to_insert[[i]][j]}
       # remove '-'
-      seqs[[i]] <- DNAStringSet(gsub("-","",seqs[[i]]))
-    }
+    }     
+    seqs[[i]] <- DNAStringSet(gsub("-","",seqs[[i]]))
+
     names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])
     all_seqnames<-c(all_seqnames,names(seqs[[i]]))
   }
@@ -70,8 +78,8 @@ get_alleles <- function(df){
 }
 
 generate_variant_transcripts <- function(v, x, 
-                                         gene = "PB.749.", 
-                                         bam_file = "aln_s.bam", verbose = FALSE) {
+                                         gene, 
+                                         bam_file = "aln_s.bam", verbose = TRUE) {
   
   if(verbose)
     message(paste0("working on '", gene, "'"))
@@ -81,7 +89,8 @@ generate_variant_transcripts <- function(v, x,
   
   # find overlaps b/w variation and this gene
   fop <- findOverlapPairs(rowRanges(v), x_ex) 
-  
+  transcripts<-vector()
+  new_seqs<-vector()
   #check that there IS an overlap
   if (!isEmpty(pintersect(fop))) {
   
@@ -142,7 +151,22 @@ generate_variant_transcripts <- function(v, x,
       mtt <- mapToTranscripts(variation_regs[nm], x_exs[tr])
       st <- start(variation_regs[nm])
       
-      df <- narrowal(st, ga[names(ga) %in% rds])
+      # if a ga read has as end== variation_regs[nm], discard it!!!!!!!!! recreate ga
+      
+      del_lines <- vector()
+      
+      for(p in 1:length(ga)){
+      
+          if(end(ga[p]) %in% start(ranges(variation_regs[nm]))){
+            
+            del_lines <- c(del_lines, p)
+          
+        }
+      }
+      
+      ga_new <- ga[-del_lines] 
+      
+      df <- narrowal(st, ga_new[names(ga_new) %in% rds])
       to_insert <- get_alleles(df)
       new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, 
                                      mtt, x_ex, tr)
