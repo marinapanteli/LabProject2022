@@ -151,11 +151,12 @@ generate_variant_transcripts <- function(v, x,
   }
   
 
-
+  seqs_old <- vector("list", length(setdiff(names(table(x_ex$transcript_id)),transcripts)))
+  
   # check for transcripts with NO overlap
   if(!isEmpty(setdiff(names(table(x_ex$transcript_id)),transcripts))){
 
-    seqs_old <- vector("list", length(setdiff(names(table(x_ex$transcript_id)),transcripts)))
+    #seqs_old <- vector("list", length(setdiff(names(table(x_ex$transcript_id)),transcripts)))
     transcripts_old <- setdiff(names(table(x_ex$transcript_id)),transcripts)
 
     for (j in seq_len(length(transcripts_old))) {
