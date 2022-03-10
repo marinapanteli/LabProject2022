@@ -164,7 +164,9 @@ generate_variant_transcripts <- function(v, x,
         }
       }
       
-      ga_new <- ga[-del_lines] 
+      ga_new <- ga
+      
+      if(length(del_lines!=0)){ga_new <- ga[-del_lines] } ############################
       
       df <- narrowal(st, ga_new[names(ga_new) %in% rds])
       to_insert <- get_alleles(df)
@@ -210,4 +212,5 @@ if(length(seqs_old)!=0 && length(new_seqs)!=0){
   new_seqs <- new_seqs
 }
   new_seqs
+  
 }

@@ -18,6 +18,7 @@ keep <- geno(v)$DP[,1] > 10 &  mcols(v)$QUAL > 40
 v <- v[keep]
 
 
+
 # library(profvis)
 # profvis({
 # gene <- "PB.749."  #Generalize this!
