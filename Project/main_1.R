@@ -34,7 +34,7 @@ system.time({
     txdb <- makeTxDbFromGRanges(x)
     bb<-(genes(txdb))$gene_id # to get all genes
     X<-sapply(bb,paste0,".",USE.NAMES=F) # to get all genes
-    X<-X[1:100]
+    X<-X[1:10]
     oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
                                                 bam_file = alns, verbose = TRUE)
     y<-do.call(c,do.call(c,oo))

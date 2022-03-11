@@ -149,7 +149,7 @@ generate_variant_transcripts <- function(v, x,
     
     for(p in 1:length(ga)){
       
-      if(end(ga[p]) %in% start(ranges(variation_regs))){
+      if(end(ga)[p] %in% start(ranges(variation_regs))){
         
         del_lines <- c(del_lines, p)
         
@@ -173,11 +173,11 @@ generate_variant_transcripts <- function(v, x,
       
       f <- first(fop)[second(fop)$transcript_id == tr]
       nm <- names(f)
-      
       # only take reads that overlap all variation pos. of this transcript
       w <- rowSums(m[, nm, drop = FALSE]) == length(nm)
       rds <- rownames(m)[w]
-      
+      m <- m[rds,]
+
       # extract transcript seq from genome + 
       # positions where we must insert variation (transcript coord.)
       dss_ref <- getSeq(Hsapiens, x_ex[x_ex$transcript_id == tr])
@@ -207,6 +207,8 @@ generate_variant_transcripts <- function(v, x,
       #df <- narrowal(st, ga_new[names(ga_new) %in% rds])
       
       #subset df_tot with correct variation positions for each transcript
+      
+     
       
       df <- df_tot[as.vector(match(nm,colnames(m)))]
       to_insert <- get_alleles(df)
