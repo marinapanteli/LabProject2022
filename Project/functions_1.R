@@ -173,10 +173,11 @@ generate_variant_transcripts <- function(v, x,
       
       f <- first(fop)[second(fop)$transcript_id == tr]
       nm <- names(f)
+      m1<-m[,nm]
       # only take reads that overlap all variation pos. of this transcript
-      w <- rowSums(m[, nm, drop = FALSE]) == length(nm)
-      rds <- rownames(m)[w]
-      m <- m[rds,]
+      w <- rowSums(m1[, nm, drop = FALSE]) == length(nm)
+      rds <- rownames(m1)[w]
+      m2 <- m1[rds,]
 
       # extract transcript seq from genome + 
       # positions where we must insert variation (transcript coord.)
@@ -210,7 +211,7 @@ generate_variant_transcripts <- function(v, x,
       
      
       
-      df <- df_tot[as.vector(match(nm,colnames(m)))]
+      df <- df_tot[as.vector(match(nm,colnames(m2)))]
       to_insert <- get_alleles(df)
       to_insert
       new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, 
