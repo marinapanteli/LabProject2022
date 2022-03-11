@@ -78,10 +78,11 @@ get_alleles <- function(df){
   strspl <- strsplit(names(alleles), "__", fixed = TRUE)
   
   if (length(strspl)==2){
-    if (length(strspl[[1]])>length(strspl[[2]])) {
-      strspl[[2]][length(strspl[[1]])] <- ""
-    } else if (length(strspl[[1]])<length(strspl[[2]])){
-      strspl[[1]][length(strspl[[2]])] <- ""
+    if (length(strspl[[2]])<length(df)) {
+      strspl[[2]][(length(strspl[[2]])+1):(length(df))] <- ""
+    } 
+    if (length(strspl[[1]])<length(df)){
+      strspl[[1]][(length(strspl[[1]])+1):(length(df))] <- ""
     }
   }
    
