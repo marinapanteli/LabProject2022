@@ -34,8 +34,11 @@ system.time({
     txdb <- makeTxDbFromGRanges(x)
     bb<-(genes(txdb))$gene_id # to get all genes
     X<-sapply(bb,paste0,".",USE.NAMES=F) # to get all genes
+    X<-X[1:10]
     oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
                                                 bam_file = alns, verbose = TRUE)
+    y<-do.call(c,do.call(c,oo))
+    writeXStringSet(y,"isoforms_with_variants.fasta")
 #    new_seqs <- generate_variant_transcripts(v,x,
 #                                           bam_file = alns, gene, verbose = TRUE) # for 1 gene
   #old_seqs <- generate_old_transcripts(v,x,
