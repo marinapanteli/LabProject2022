@@ -33,7 +33,8 @@ narrowal <- function(starts, ga){
     gr <- GRanges(seqnames(ga)[1],
                   ir, strand = "+")
     na <- narrowAlignments(ga, gr)
-    as.character(mcols(na)$seq)
+    #as.character(mcols(na)$seq)
+    mcols(na)
   })
   
 }
@@ -212,7 +213,19 @@ generate_variant_transcripts <- function(v, x,
      
       
       df <- df_tot[as.vector(match(nm,colnames(m2)))]
-      to_insert <- get_alleles(df)
+      
+      df1<-vector("list", length(df))
+      
+      for (l in 1:length(df)) {
+        
+        df1[[l]]<-as.character(df[[l]]$seq)[rownames(df[[l]]) %in% rownames (m2)]
+        
+      }
+      
+      
+      
+      #I must also reduce dftot for each list element so that only relevant reads are kept
+      to_insert <- get_alleles(df1)
       to_insert
       new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, 
                                      mtt, x_ex, tr)
