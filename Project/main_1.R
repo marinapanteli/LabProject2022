@@ -5,6 +5,7 @@ suppressPackageStartupMessages({
   library(BSgenome.Hsapiens.UCSC.hg38)
   library(GenomicAlignments)
   library(CrispRVariants)
+  library(dplyr)
 })
 
 source("functions_1.R")
@@ -35,7 +36,7 @@ v <- v[keep]
  X<-X[1:10]
 bam_file = alns
 verbose = TRUE
-gene<-"PB.10000."
+#gene<-"PB.749."
 oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
           bam_file = alns, verbose = TRUE)
 
