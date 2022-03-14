@@ -6,32 +6,40 @@ suppressPackageStartupMessages({
   library(GenomicAlignments)
   library(CrispRVariants)
   library(dplyr)
-  library(data.table)
 })
 
 source("Project/functions_1.R")
 
 x <- import("wtc11_corrected.gtf")
-v <- readVcf("deepvariant_calls_pass.vcf.gz")
-alns <- "aln_s.bam"
+x <- extract_exons(x)
 
-# filter variants
+v <- readVcf("deepvariant_calls_pass.vcf.gz")
 keep <- geno(v)$DP[,1] > 10 &  mcols(v)$QUAL > 40 
 v <- v[keep]
 
+alns <- "aln_s.bam"
+
+# filter variants
+
 
 # test function
-gene <- "PB.22."
+gene <- "PB.2"
 new_seqs <- generate_variant_transcripts(v = v,x = x,
                 bam_file = alns, gene = gene, verbose = TRUE)
 
 
 # profile function
 library(profvis)
+library(BiocParallel)
 profvis({
-gene <- "PB.22."
-new_seqs <- generate_variant_transcripts(v = v,x = x,
-               bam_file = alns, gene = gene, verbose = TRUE)
+# gene <- "PB.22"
+# new_seqs <- generate_variant_transcripts(v = v,x = x,
+#                bam_file = alns, gene = gene, verbose = FALSE)
+  genes <- unique(x$gene_id)
+  gvts <- bplapply(genes[1:24], generate_variant_transcripts,
+                 v = v,x = x, bam_file = alns, verbose = TRUE,
+                 BPPARAM = SerialParam())
+
 })
 
 
@@ -60,7 +68,7 @@ system.time({
 
 
 # system.time({
-# #  gene <- "PB.749."
+# #  gene <- "PB.749"
 #   bam_file = alns
 #   verbose = TRUE
 #     txdb <- makeTxDbFromGRanges(x)
@@ -76,7 +84,8 @@ system.time({
 
 
 # # to help testing
-# gene = "PB.749."; bam_file = "aln_s.bam"; verbose = TRUE
-# gene = "PB.1."; bam_file = "aln_s.bam"; verbose = TRUE
+# gene = "PB.749"; bam_file = "aln_s.bam"; verbose = TRUE
+# gene = "PB.1"; bam_file = "aln_s.bam"; verbose = TRUE
+# gene = "PB.2"; bam_file = "aln_s.bam"; verbose = TRUE
 # # then step through generate_variant_transcripts()
 

@@ -16,11 +16,10 @@ get_read_ranges <- function(ga) {
 }
 
 
-extract_exons <- function(x, gene) {
+extract_exons <- function(x, gene = NULL) {
   x_ex <- x[x$type=="exon" & seqnames(x) != "chrM"]
-  g <- grepl(gene, x_ex$transcript_id, 
-             fixed = TRUE)
-  x_ex <- x_ex[g]
+  if(!is.null(gene))
+    x_ex <- x_ex[x_ex$gene_id == gene]
   w <- which(seqlevels(x_ex)=="chrM")
   seqlevels(x_ex) <- seqlevels(x_ex)[-w]
   x_ex
@@ -43,9 +42,9 @@ narrowal <- function(variation, ga){
 }
 
 
-seqs_with_var <- function(to_insert,ref_seq,mtt,x_ex,tr){
-  seqs <- list()
+seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex){
   to_insert <- to_insert[lengths(to_insert)!=0]
+  seqs <- vector("list", length(to_insert))
   for(i in 1:length(to_insert)) { # loop through alleles
     seqs[[i]] <- ref_seq
     for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
@@ -72,13 +71,14 @@ seqs_with_var <- function(to_insert,ref_seq,mtt,x_ex,tr){
 }
 
 get_alleles <- function(df){
-  z <- matrix(unlist(df), ncol=length(df))
-  alleles <- as.data.frame(z) %>% group_by_all %>% count
-  alleles <- arrange(alleles)
-  
-  alleles <- alleles[seq_len(min(2,dim(alleles)[1])),]
-  
-  strspl = data.table::transpose(as.list(alleles[-dim(alleles)[2]]))
+  z <- matrix(unlist(df), ncol=length(df), 
+              dimnames = list(NULL,names(df)))
+  alleles <- as.data.frame(z) %>% group_by_all %>% count %>%
+    arrange(desc(n)) 
+  # take top 2 alleles, transpose, return list
+  alleles %>% slice(seq_len(min(2,nrow(alleles)))) %>%
+    select(-n) %>% as.data.frame %>% 
+    t %>% as.data.frame %>% as.list
 }
 
 generate_variant_transcripts <- function(v, x, 
@@ -88,11 +88,16 @@ generate_variant_transcripts <- function(v, x,
   if(verbose)
     message(paste0("working on '", gene, "'"))
   
-  # extract all exons for given gene  
-  x_ex <- extract_exons(x, gene) ##
+  # extract exons for given gene  
+  x_ex <- x[x$gene_id==gene] ##
+  # split into transcripts
+  x_exs <- split(x_ex, x_ex$transcript_id)
   
   # find overlaps b/w variation and this gene
   fop <- findOverlapPairs(rowRanges(v), x_ex) 
+  transcripts <- unique(S4Vectors::second(fop)$transcript_id)
+  
+  new_seqs <- vector("list", length(transcripts))
 
   #check that there IS an overlap
   if (!isEmpty(pintersect(fop))) {
@@ -104,14 +109,14 @@ generate_variant_transcripts <- function(v, x,
     ga <- readGAlignments(bam_file, 
                           param = sbp, use.names = TRUE)
     
-    # full set of variants for this region
+    if(verbose)
+      message(paste0(length(ga), " total reads."))
+
+        # full set of variants for this region
     variation_regs <- unique(S4Vectors::first(fop))
     
     # ranges for each read
     rngs <- get_read_ranges(ga) ##
-    
-    # split into transcripts
-    x_exs <- split(x_ex, x_ex$transcript_id)
     
     # intersect all reads w/ all transcripts, form matrix
     m <- matrix(0,
@@ -130,8 +135,6 @@ generate_variant_transcripts <- function(v, x,
       m[names(pop)[i], unique(pop[[i]])] <- 1
     }
     
-    transcripts <- unique(S4Vectors::second(fop)$transcript_id)
-    new_seqs <- vector("list", length(transcripts))
     
     # remove reads that end right at the variation
     ga <- ga[ !(end(ga) %in% start(variation_regs)) ]
@@ -156,10 +159,11 @@ generate_variant_transcripts <- function(v, x,
 
       # extract transcript seq from genome + 
       # positions where we must insert variation (transcript coord.)
-      dss_ref <- getSeq(Hsapiens, x_ex[x_ex$transcript_id == tr])
-      ref_seq <- DNAStringSet(paste(as.character(dss_ref),
-                                    collapse = ""))
+      dss_ref <- getSeq(Hsapiens, x_ex[x_ex$transcript_id == tr],
+                        as.character = TRUE)
+      ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
       names(ref_seq) <- tr
+      
       mtt <- mapToTranscripts(variation_regs[nm], x_exs[tr])
 
       df <- df_tot[nm]
@@ -172,13 +176,13 @@ generate_variant_transcripts <- function(v, x,
       # get alleles and insert them into reference sequence
       to_insert <- get_alleles(df1)
       new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, 
-                                     mtt, x_ex, tr)
+                                     mtt, x_ex)
   
     }
   }
   
 
-  transcripts_unmod <- setdiff(unique(x_ex$transcript_id), transcripts)
+  transcripts_unmod <- setdiff(names(x_exs), transcripts)
   seqs_unmod <- vector("list", length(transcripts_unmod))
 
   # check for transcripts with NO overlap
@@ -189,9 +193,10 @@ generate_variant_transcripts <- function(v, x,
       if(verbose)
         message(tr_unmod)
 
-      dss_ref_unmod <- getSeq(Hsapiens, x_ex[x_ex$transcript_id == tr_unmod])
-      ref_seq_unmod <- DNAStringSet(paste(as.character(dss_ref_unmod),
-                                        collapse = ""))
+      dss_ref_unmod <- getSeq(Hsapiens, 
+                              x_ex[x_ex$transcript_id == tr_unmod],
+                              as.character = TRUE)
+      ref_seq_unmod <- DNAStringSet(paste(dss_ref_unmod,collapse = ""))
       names(ref_seq_unmod) <- tr_unmod
 
       if(as.character(strand(x_ex[x_ex$transcript_id == tr_unmod])[1])=='-'){
