@@ -26,7 +26,10 @@ extract_exons <- function(x, gene) {
   x_ex
 }
 
-narrowal <- function(starts, ga){
+narrowal <- function(variation, ga){
+  
+  starts <- start(variation)
+  names(starts) <- names(variation)
   
   lapply(starts, function(u) {
     ir <- IRanges(start = u, width = 2)
@@ -119,7 +122,7 @@ generate_variant_transcripts <- function(v, x,
                           param = sbp, use.names = TRUE)
     
     # full set of variants for this region
-    variation_regs <- unique(fop@first)
+    variation_regs <- unique(S4Vectors::first(fop))
     
     # ranges for each read
     rngs <- get_read_ranges(ga) ##
@@ -147,42 +150,21 @@ generate_variant_transcripts <- function(v, x,
     transcripts <- unique(second(fop)$transcript_id)
     new_seqs <- vector("list", length(transcripts))
     
+    # remove reads that end right at the variation
+    ga <- ga[ !(end(ga) %in% start(variation_regs)) ]
     
-    # EDW
-    
-    del_lines <- vector()
-    
-    for(p in 1:length(ga)){
-      
-      if(end(ga)[p] %in% start(ranges(variation_regs))){
+    df_tot <- narrowal(variation_regs,ga)
+
         
-        del_lines <- c(del_lines, p)
-        
-      }
-    }
-    
-    ga_new <- ga
-    
-    if(length(del_lines!=0)){ga_new <- ga[-del_lines] } ############################
-    
-    
-    df_tot <- narrowal(start(variation_regs),ga_new)
-    
-   # to_insert_tot <- get_alleles(df_tot)
-    
-    
     for (i in seq_len(length(transcripts))) {
       tr <- transcripts[i]
       if(verbose)
         message(tr)
 
-      f <- fop@first[fop@second$transcript_id == tr]
+      f <- S4Vectors::first(fop)[second(fop)$transcript_id == tr]
       nm <- names(f)
-      m1<-as.data.frame(m)[nm]
-      if(verbose)
-        message(i)
-        message(dim(m1))
-        message(nm)
+      m1 <- as.data.frame(m)[nm]
+
       # only take reads that overlap all variation pos. of this transcript
       w <- rowSums(m1[, nm, drop = FALSE]) == length(nm)
       rds <- rownames(m1)[w]
@@ -195,45 +177,17 @@ generate_variant_transcripts <- function(v, x,
                                     collapse = ""))
       names(ref_seq) <- tr
       mtt <- mapToTranscripts(variation_regs[nm], x_exs[tr])
-      st <- start(variation_regs[nm])
+      # st <- start(variation_regs[nm])
       
-      # if a ga read has as end== variation_regs[nm], discard it!!!!!!!!! recreate ga
-      # 
-      # del_lines <- vector()
-      # 
-      # for(p in 1:length(ga)){
-      # 
-      #     if(end(ga[p]) %in% start(ranges(variation_regs[nm]))){
-      #       
-      #       del_lines <- c(del_lines, p)
-      #     
-      #   }
-      # }
-      # 
-      # ga_new <- ga
-      # 
-      # if(length(del_lines!=0)){ga_new <- ga[-del_lines] } ############################
-      # 
-      #df <- narrowal(st, ga_new[names(ga_new) %in% rds])
+      df <- df_tot[nm]
       
-      #subset df_tot with correct variation positions for each transcript
+      df1 <- lapply(df, function(u) {
+        keep <- rownames(u) %in% rownames(m2)
+        as.character(u$seq[keep])
+      })
       
-     
-      
-      df <- df_tot[as.vector(match(nm,colnames(m)))]
-      
-      df1<-vector("list", length(df))
-      
-      for (l in 1:length(df)) {
-        
-        df1[[l]]<-as.character(df[[l]]$seq)[rownames(df[[l]]) %in% rownames (m2)]
-        
-      }
-      
-      
-      #I must also reduce dftot for each list element so that only relevant reads are kept
+      # get alleles and insert them into reference sequence
       to_insert <- get_alleles(df1)
-      to_insert
       new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, 
                                      mtt, x_ex, tr)
   
