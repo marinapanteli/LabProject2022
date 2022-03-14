@@ -76,7 +76,7 @@ get_alleles <- function(df){
   alleles <- as.data.frame(z) %>% group_by_all %>% count %>%
     arrange(desc(n)) 
   # take top 2 alleles, transpose, return list
-  alleles %>% slice(seq_len(min(2,nrow(alleles)))) %>%
+  alleles[seq_len(min(2,nrow(alleles))),] %>%
     select(-n) %>% as.data.frame %>% 
     t %>% as.data.frame %>% as.list
 }

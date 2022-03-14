@@ -23,7 +23,7 @@ alns <- "aln_s.bam"
 
 
 # test function
-gene <- "PB.2"
+gene <- "PB.22"
 new_seqs <- generate_variant_transcripts(v = v,x = x,
                 bam_file = alns, gene = gene, verbose = TRUE)
 
@@ -86,6 +86,6 @@ system.time({
 # # to help testing
 # gene = "PB.749"; bam_file = "aln_s.bam"; verbose = TRUE
 # gene = "PB.1"; bam_file = "aln_s.bam"; verbose = TRUE
-# gene = "PB.2"; bam_file = "aln_s.bam"; verbose = TRUE
+# gene = "PB.22"; bam_file = "aln_s.bam"; verbose = TRUE
 # # then step through generate_variant_transcripts()
 
