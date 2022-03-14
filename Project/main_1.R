@@ -6,6 +6,7 @@ suppressPackageStartupMessages({
   library(GenomicAlignments)
   library(CrispRVariants)
   library(dplyr)
+  library(data.table)
 })
 
 source("Project/functions_1.R")
@@ -19,30 +20,32 @@ keep <- geno(v)$DP[,1] > 10 &  mcols(v)$QUAL > 40
 v <- v[keep]
 
 
-gene <- "PB.22."  #Generalize this!
+# test function
+gene <- "PB.22."
 new_seqs <- generate_variant_transcripts(v = v,x = x,
                 bam_file = alns, gene = gene, verbose = TRUE)
 
 
+# profile function
 library(profvis)
 profvis({
-gene <- "PB.22."  #Generalize this!
+gene <- "PB.22."
 new_seqs <- generate_variant_transcripts(v = v,x = x,
                bam_file = alns, gene = gene, verbose = TRUE)
 })
 
 
-#all_genes<-unique(x$gene_id) # to get all genes
-
- txdb <- makeTxDbFromGRanges(x)
- bb<-(genes(txdb))$gene_id # to get all genes
- X<-sapply(bb,paste0,".",USE.NAMES=F) # to get all genes
- X<-X[1:10]
-bam_file = alns
-verbose = TRUE
-#gene<-"PB.749."
-oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
-          bam_file = alns, verbose = TRUE)
+# #all_genes<-unique(x$gene_id) # to get all genes
+# 
+#  txdb <- makeTxDbFromGRanges(x)
+#  bb<-(genes(txdb))$gene_id # to get all genes
+#  X<-sapply(bb,paste0,".",USE.NAMES=F) # to get all genes
+#  X<-X[1:10]
+# bam_file = alns
+# verbose = TRUE
+# #gene<-"PB.749."
+# oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
+#           bam_file = alns, verbose = TRUE)
 
 
 library(BiocParallel)
@@ -56,30 +59,20 @@ system.time({
 })
 
 
-gvts <- lapply(genes[[1]], generate_variant_transcripts,
-                 v = v,x = x, bam_file = alns, verbose = TRUE)
-
-
-
-system.time({
-#  gene <- "PB.749."
-  bam_file = alns
-  verbose = TRUE
-    txdb <- makeTxDbFromGRanges(x)
-    bb<-(genes(txdb))$gene_id # to get all genes
-    X<-sapply(bb,paste0,".",USE.NAMES=F) # to get all genes
-    X<-X[1:10]
-   
-    oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
-                                                bam_file = alns, verbose = TRUE)
-    y<-do.call(c,do.call(c,oo))
-    writeXStringSet(y,"isoforms_with_variants.fasta")
-#    new_seqs <- generate_variant_transcripts(v,x,
-#                                           bam_file = alns, gene, verbose = TRUE) # for 1 gene
-  #old_seqs <- generate_old_transcripts(v,x,
-   #                                        bam_file = alns, gene, verbose = FALSE) # for 1 gene
-  
-  })
+# system.time({
+# #  gene <- "PB.749."
+#   bam_file = alns
+#   verbose = TRUE
+#     txdb <- makeTxDbFromGRanges(x)
+#     bb<-(genes(txdb))$gene_id # to get all genes
+#     X<-sapply(bb,paste0,".",USE.NAMES=F) # to get all genes
+#     X<-X[1:10]
+#    
+#     oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
+#                                                 bam_file = alns, verbose = TRUE)
+#     y<-do.call(c,do.call(c,oo))
+#     writeXStringSet(y,"isoforms_with_variants.fasta")
+#   })
 
 
 # # to help testing
