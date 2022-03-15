@@ -45,23 +45,51 @@ narrowal <- function(variation, ga){
 seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex){
   to_insert <- to_insert[lengths(to_insert)!=0]
   seqs <- vector("list", length(to_insert))
-  for(i in 1:length(to_insert)) { # loop through alleles
-    seqs[[i]] <- ref_seq
-    for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
+ 
+   if(as.character(strand(mtt)[1])=='-'){
+     
+     for(i in 1:length(to_insert)) { # loop through alleles
+      seqs[[i]] <- ref_seq
+    
+      for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
       
-      if(start(mtt)[j]==width(ref_seq)){
-        subseq(seqs[[i]], start=start(mtt)[j], 
-               end=start(mtt)[j]) <- to_insert[[i]][j]
-      } else {
-        subseq(seqs[[i]], start=start(mtt)[j], 
-             end=start(mtt)[j]+1) <- to_insert[[i]][j]
-      }
-    }     
+        if(start(mtt)[j]==width(ref_seq)){
+          subseq(seqs[[i]], start=width(ref_seq)+1-start(mtt)[j], 
+                 end=width(ref_seq)+1-start(mtt)[j]) <- to_insert[[i]][j]
+         } else {
+          subseq(seqs[[i]], start=width(ref_seq)+1-start(mtt)[j], 
+               end=width(ref_seq)+1-start(mtt)[j]+1) <- to_insert[[i]][j]
+         }
+      }     
     # remove '-'
-    seqs[[i]] <- DNAStringSet(gsub("-","",seqs[[i]]))
-
-    names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])
-  }
+      seqs[[i]] <- DNAStringSet(gsub("-","",seqs[[i]]))
+    
+      names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])
+     }
+   }else{
+     
+     for(i in 1:length(to_insert)) { # loop through alleles
+       seqs[[i]] <- ref_seq
+       
+       for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
+         
+         if(start(mtt)[j]==width(ref_seq)){
+           subseq(seqs[[i]], start=start(mtt)[j], 
+                  end=start(mtt)[j]) <- to_insert[[i]][j]
+         } else {
+           subseq(seqs[[i]], start=start(mtt)[j], 
+                  end=start(mtt)[j]+1) <- to_insert[[i]][j]
+         }
+       }     
+       # remove '-'
+       seqs[[i]] <- DNAStringSet(gsub("-","",seqs[[i]]))
+       
+       names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])
+     
+     }
+   }
+  
+   
   seqs <- unlist(DNAStringSetList(seqs))
   
   if (as.character(strand(x_ex)[1]) == "-")
@@ -98,10 +126,10 @@ generate_variant_transcripts <- function(v, x,
   transcripts <- unique(S4Vectors::second(fop)$transcript_id)
   
   new_seqs <- vector("list", length(transcripts))
-
+  
   #check that there IS an overlap
   if (!isEmpty(pintersect(fop))) {
-  
+    
     # read alignments for this region
     gr <- range(x_ex)
     sbp <- ScanBamParam(which = gr, what = scanBamWhat())
@@ -111,8 +139,8 @@ generate_variant_transcripts <- function(v, x,
     
     if(verbose)
       message(paste0(length(ga), " total reads."))
-
-        # full set of variants for this region
+    
+    # full set of variants for this region
     variation_regs <- unique(S4Vectors::first(fop))
     
     # ranges for each read
@@ -141,31 +169,34 @@ generate_variant_transcripts <- function(v, x,
     
     # narrow all alignments around variation
     df_tot <- narrowal(variation_regs,ga)
-
+    
     # loop through affected transcripts    
     for (i in seq_len(length(transcripts))) {
       tr <- transcripts[i]
       if(verbose)
         message(tr)
-
+      
       f <- S4Vectors::first(fop)[S4Vectors::second(fop)$transcript_id == tr]
       nm <- names(f)
       m1 <- as.data.frame(m)[nm]
-
+      
       # only take reads that overlap all variation pos. of this transcript
       w <- rowSums(m1[, nm, drop = FALSE]) == length(nm)
       rds <- rownames(m1)[w]
       m2 <- subset(m1, rownames(m1) %in% rds)
-
+      
       # extract transcript seq from genome + 
       # positions where we must insert variation (transcript coord.)
-      dss_ref <- getSeq(Hsapiens, x_ex[x_ex$transcript_id == tr],
+      tr_gr <- x_ex[x_ex$transcript_id == tr]
+      gr <- GRanges(seqnames = seqnames(tr_gr),
+                    IRanges(ranges(tr_gr)), strand = "+")
+      dss_ref <- getSeq(Hsapiens, gr,
                         as.character = TRUE)
       ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
       names(ref_seq) <- tr
       
       mtt <- mapToTranscripts(variation_regs[nm], x_exs[tr])
-
+      
       df <- df_tot[nm]
       
       df1 <- lapply(df, function(u) {
@@ -177,36 +208,36 @@ generate_variant_transcripts <- function(v, x,
       to_insert <- get_alleles(df1)
       new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, 
                                      mtt, x_ex)
-  
+      
     }
   }
   
-
+  
   transcripts_unmod <- setdiff(names(x_exs), transcripts)
   seqs_unmod <- vector("list", length(transcripts_unmod))
-
+  
   # check for transcripts with NO overlap
   if(!isEmpty(transcripts_unmod)) {
-
+    
     for (j in seq_len(length(transcripts_unmod))) {
       tr_unmod <- transcripts_unmod[j]
       if(verbose)
         message(tr_unmod)
-
+      
       dss_ref_unmod <- getSeq(Hsapiens, 
                               x_ex[x_ex$transcript_id == tr_unmod],
                               as.character = TRUE)
       ref_seq_unmod <- DNAStringSet(paste(dss_ref_unmod,collapse = ""))
       names(ref_seq_unmod) <- tr_unmod
-
+      
       if(as.character(strand(x_ex[x_ex$transcript_id == tr_unmod])[1])=='-'){
         ref_seq_unmod <- reverseComplement(ref_seq_unmod)
       }
-
+      
       seqs_unmod[[j]] <- ref_seq_unmod
     }
   }
   
-  append(new_seqs, seqs_unmod)
-
+  new_seqs <- append(new_seqs, seqs_unmod)
+  unlist(DNAStringSetList(new_seqs))  
 }

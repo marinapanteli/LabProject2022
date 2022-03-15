@@ -8,7 +8,7 @@ suppressPackageStartupMessages({
   library(dplyr)
 })
 
-source("Project/functions_1.R")
+source("functions_1.R")
 
 x <- import("wtc11_corrected.gtf")
 x <- extract_exons(x)
@@ -25,21 +25,27 @@ alns <- "aln_s.bam"
 # test function
 gene <- "PB.22"
 new_seqs <- generate_variant_transcripts(v = v,x = x,
-                bam_file = alns, gene = gene, verbose = TRUE)
+                                         bam_file = alns, gene = gene, verbose = TRUE)
 
+new_seqs <- do.call(c,new_seqs)
+# 
+# genes <- unique(x$gene_id)
+# X<-genes
+# X<-X[1:10]
 
 # profile function
 library(profvis)
 library(BiocParallel)
 profvis({
-# gene <- "PB.22"
-# new_seqs <- generate_variant_transcripts(v = v,x = x,
-#                bam_file = alns, gene = gene, verbose = FALSE)
+  # gene <- "PB.22"
+  # new_seqs <- generate_variant_transcripts(v = v,x = x,
+  #                bam_file = alns, gene = gene, verbose = FALSE)
   genes <- unique(x$gene_id)
   gvts <- bplapply(genes[1:24], generate_variant_transcripts,
-                 v = v,x = x, bam_file = alns, verbose = TRUE,
-                 BPPARAM = SerialParam())
-
+                   v = v,x = x, bam_file = alns, verbose = TRUE,
+                   BPPARAM = SerialParam())
+  gvts <- do.call(c,gvts)
+  
 })
 
 
@@ -54,16 +60,18 @@ profvis({
 # #gene<-"PB.749."
 # oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
 #           bam_file = alns, verbose = TRUE)
-
-
+# oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
+#                       bam_file = alns, verbose = TRUE)
+# 
 library(BiocParallel)
 genes <- unique(x$gene_id)
 system.time({
- # gvts <- lapply(genes, generate_variant_transcripts,
- #                v=v,x=x, bam_file = alns, verbose = TRUE)
- gvts <- bplapply(genes[1:24], generate_variant_transcripts,
-                    v = v,x = x, bam_file = alns, verbose = TRUE,
-                  BPPARAM = SerialParam())
+  # gvts <- lapply(genes, generate_variant_transcripts,
+  #                v=v,x=x, bam_file = alns, verbose = TRUE)
+  gvts <- bplapply(genes[1:24], generate_variant_transcripts,
+                   v = v,x = x, bam_file = alns, verbose = TRUE,
+                   BPPARAM = SerialParam())
+  gvts <- do.call(c,gvts)
 })
 
 
@@ -88,4 +96,3 @@ system.time({
 # gene = "PB.1"; bam_file = "aln_s.bam"; verbose = TRUE
 # gene = "PB.22"; bam_file = "aln_s.bam"; verbose = TRUE
 # # then step through generate_variant_transcripts()
-
