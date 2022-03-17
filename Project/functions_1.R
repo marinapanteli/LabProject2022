@@ -57,12 +57,19 @@ seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex){
           subseq(seqs[[i]], start=width(ref_seq)+1-start(mtt)[j], 
                  end=width(ref_seq)+1-start(mtt)[j]) <- to_insert[[i]][j]
          } else {
-          subseq(seqs[[i]], start=width(ref_seq)+1-start(mtt)[j], 
-               end=width(ref_seq)+1-start(mtt)[j]+1) <- to_insert[[i]][j]
+           if(nchar(str_match(names(mtt[j]), "_\\s*(.*?)\\s*/")[2])>nchar(sub("^[^/]*", "", names(mtt[j])))-1){
+             subseq(seqs[[i]], start=width(ref_seq)+1-start(mtt)[j]-1, 
+                    end=width(ref_seq)+1-start(mtt)[j]) <- to_insert[[i]][j]
+             
+           }
+           else{
+            subseq(seqs[[i]], start=width(ref_seq)+1-start(mtt)[j], 
+                   end=width(ref_seq)+1-start(mtt)[j]+1) <- to_insert[[i]][j]
+          }
          }
       }     
     # remove '-'
-      seqs[[i]] <- DNAStringSet(gsub("-","",seqs[[i]]))
+      #seqs[[i]] <- DNAStringSet(gsub("-","",seqs[[i]]))
     
       names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])
      }
@@ -77,8 +84,14 @@ seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex){
            subseq(seqs[[i]], start=start(mtt)[j], 
                   end=start(mtt)[j]) <- to_insert[[i]][j]
          } else {
-           subseq(seqs[[i]], start=start(mtt)[j], 
-                  end=start(mtt)[j]+1) <- to_insert[[i]][j]
+           if (nchar(str_match(names(mtt[j]), "_\\s*(.*?)\\s*/")[2])>nchar(sub("^[^/]*", "", names(mtt[j])))-1) {
+             subseq(seqs[[i]], start=start(mtt)[j], 
+                    end=start(mtt)[j]+1) <- to_insert[[i]][j]
+           }else {
+             subseq(seqs[[i]], start=start(mtt)[j], 
+                    end=start(mtt)[j]+1) <- to_insert[[i]][j]
+           }
+           
          }
        }     
        # remove '-'
@@ -109,7 +122,7 @@ get_alleles <- function(df){
     t %>% as.data.frame %>% as.list
 }
 
-generate_variant_transcripts <- function(v, x, 
+generate_variant_transcripts <- function(v, x,
                                          gene, 
                                          bam_file = "aln_s.bam", verbose = TRUE) {
   
@@ -188,8 +201,13 @@ generate_variant_transcripts <- function(v, x,
       # extract transcript seq from genome + 
       # positions where we must insert variation (transcript coord.)
       tr_gr <- x_ex[x_ex$transcript_id == tr]
+      
       gr <- GRanges(seqnames = seqnames(tr_gr),
-                    IRanges(ranges(tr_gr)), strand = "+")
+                      IRanges(ranges(tr_gr)), strand = "+")
+     
+     
+      
+      
       dss_ref <- getSeq(Hsapiens, gr,
                         as.character = TRUE)
       ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
@@ -204,40 +222,75 @@ generate_variant_transcripts <- function(v, x,
         as.character(u$seq[keep])
       })
       
-      # get alleles and insert them into reference sequence
-      to_insert <- get_alleles(df1)
-      new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, 
-                                     mtt, x_ex)
+      #nr_reads <-min(nr_reads,length(df1[1][[1]]))
       
+       #get alleles and insert them into reference sequence
+       to_insert <- get_alleles(df1) 
+       new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, mtt, x_ex)
+      # 
     }
   }
   
   
-  transcripts_unmod <- setdiff(names(x_exs), transcripts)
-  seqs_unmod <- vector("list", length(transcripts_unmod))
-  
-  # check for transcripts with NO overlap
-  if(!isEmpty(transcripts_unmod)) {
-    
-    for (j in seq_len(length(transcripts_unmod))) {
-      tr_unmod <- transcripts_unmod[j]
-      if(verbose)
-        message(tr_unmod)
+    transcripts_unmod <- setdiff(names(x_exs), transcripts)
+    seqs_unmod <- vector("list", length(transcripts_unmod))
+  # # 
+  # # # check for transcripts with NO overlap
+    if(!isEmpty(transcripts_unmod)) {
       
-      dss_ref_unmod <- getSeq(Hsapiens, 
-                              x_ex[x_ex$transcript_id == tr_unmod],
-                              as.character = TRUE)
-      ref_seq_unmod <- DNAStringSet(paste(dss_ref_unmod,collapse = ""))
-      names(ref_seq_unmod) <- tr_unmod
-      
-      if(as.character(strand(x_ex[x_ex$transcript_id == tr_unmod])[1])=='-'){
-        ref_seq_unmod <- reverseComplement(ref_seq_unmod)
+      for (j in seq_len(length(transcripts_unmod))) {
+        tr_unmod <- transcripts_unmod[j]
+        if(verbose)
+          message(tr_unmod)
+        
+        dss_ref_unmod <- getSeq(Hsapiens, 
+                                x_ex[x_ex$transcript_id == tr_unmod],
+                                as.character = TRUE)
+        ref_seq_unmod <- DNAStringSet(paste(dss_ref_unmod,collapse = ""))
+        names(ref_seq_unmod) <- tr_unmod
+        
+        if(as.character(strand(x_ex[x_ex$transcript_id == tr_unmod])[1])=='-'){
+          ref_seq_unmod <- reverseComplement(ref_seq_unmod)
+        }
+        
+        seqs_unmod[[j]] <- ref_seq_unmod
       }
-      
-      seqs_unmod[[j]] <- ref_seq_unmod
     }
-  }
-  
-  new_seqs <- append(new_seqs, seqs_unmod)
-  unlist(DNAStringSetList(new_seqs))  
+    
+    new_seqs <- append(new_seqs, seqs_unmod)
+    unlist(DNAStringSetList(new_seqs))  
+  #nr_reads
 }
+
+
+# Careful, in case an insertion or a deletion has happened on the left of this area of variation. That is why there might be a shift.
+# ### SNP - 
+# Run for PB.22.1 (which is i=18). ATGTAGATGGGCCCGTC is in the ref_seq
+####substring(as.character(reverseComplement(new_seqs[[i]])),str_locate(as.character(ref_seq),"ATGTAGATGGGCCCGTC")[1],str_locate(as.character(ref_seq),"ATGTAGATGGGCCCGTC")[2])
+
+# ### SNP +
+# Run for PB.749.3 (which is i=3). GGCCCGGATGAGCAGACTCCTGT is in the ref_seq
+#substring(as.character((new_seqs[[i]])),str_locate(as.character(ref_seq),"GGCCCGGATGAGCAGACTCCTGT")[1],str_locate(as.character(ref_seq),"GGCCCGGATGAGCAGACTCCTGT")[2])
+ 
+# ### DEL -  
+# Run for PB.22.32 (which is i=3). CCTGGCTGCTGGGGAGGAC is in the ref_seq
+#####substring(as.character(reverseComplement(new_seqs[[i]])),str_locate(as.character(ref_seq),"CCTGGCTGCTGGGGAGGAC")[1],str_locate(as.character(ref_seq),"CCTGGCTGCTGGGGAGGAC")[2])
+
+# 
+# 
+# ### DEL +
+# Run for PB.749.3 (which is i=3). AAATGAAAAACGTTTGCTAGA is in the ref_seq
+# substring(as.character((new_seqs[[i]])),str_locate(as.character(ref_seq),"AAATGAAAAACGTTTGCTAGA")[1],str_locate(as.character(ref_seq),"AAATGAAAAACGTTTGCTAGA")[2])
+# 
+# 
+# ### INS -  
+# Run for PB.1.1 (which is i=8). CAGAGTGGCCCAGCCAC is in the ref_seq
+# substring(as.character(reverseComplement(new_seqs[[i]])),str_locate(as.character(ref_seq),"CAGAGTGGCCAGCCACC")[1],str_locate(as.character(ref_seq),"CAGAGTGGCCAGCCACC")[2])
+
+# 
+# 
+# ### INS +
+# # Run for PB.4.3 (which is i=2). TGCACACACGAGCA is in the ref_seq. 
+#substring(as.character((new_seqs[[i]])),str_locate(as.character(ref_seq),"TGCACACACGAGCA")[1],str_locate(as.character(ref_seq),"TGCACACACGAGCA")[2])
+
+# 

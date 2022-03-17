@@ -6,6 +6,7 @@ suppressPackageStartupMessages({
   library(GenomicAlignments)
   library(CrispRVariants)
   library(dplyr)
+  library(stringr) 
 })
 
 source("functions_1.R")
@@ -21,9 +22,10 @@ alns <- "aln_s.bam"
 
 # filter variants
 
-
+#nr_reads<-100000
 # test function
-gene <- "PB.22"
+gene <- "PB.22" 
+#gene <- unique(x$gene_id)
 new_seqs <- generate_variant_transcripts(v = v,x = x,
                                          bam_file = alns, gene = gene, verbose = TRUE)
 
