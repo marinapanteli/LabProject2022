@@ -124,7 +124,7 @@ get_alleles <- function(df){
 
 generate_variant_transcripts <- function(v, x,
                                          gene, 
-                                         bam_file = "aln_s.bam", verbose = TRUE) {
+                                         bam_file = "aln_s.bam", verbose = FALSE) {
   
   if(verbose)
     message(paste0("working on '", gene, "'"))
@@ -263,35 +263,41 @@ generate_variant_transcripts <- function(v, x,
 }
 
 
-# Careful, in case an insertion or a deletion has happened on the left of this area of variation. That is why there might be a shift.
-
-# ### SNP - 
-# Run for PB.22.1 (which is i=18). ATGTAGATGGGCCCGTC is in the ref_seq
-####substring(as.character(reverseComplement(new_seqs[[i]])),str_locate(as.character(ref_seq),"ATGTAGATGGGCCCGTC")[1],str_locate(as.character(ref_seq),"ATGTAGATGGGCCCGTC")[2])
-
-# ### SNP +
-# Run for PB.749.3 (which is i=3). GGCCCGGATGAGCAGACTCCTGT is in the ref_seq
-#substring(as.character((new_seqs[[i]])),str_locate(as.character(ref_seq),"GGCCCGGATGAGCAGACTCCTGT")[1],str_locate(as.character(ref_seq),"GGCCCGGATGAGCAGACTCCTGT")[2])
- 
-# ### DEL -  
-# Run for PB.22.32 (which is i=3). CCTGGCTGCTGGGGAGGAC is in the ref_seq
-#####substring(as.character(reverseComplement(new_seqs[[i]])),str_locate(as.character(ref_seq),"CCTGGCTGCTGGGGAGGAC")[1],str_locate(as.character(ref_seq),"CCTGGCTGCTGGGGAGGAC")[2])
-
-# 
-# 
-# ### DEL +
-# Run for PB.749.3 (which is i=3). AAATGAAAAACGTTTGCTAGA is in the ref_seq
-# substring(as.character((new_seqs[[i]])),str_locate(as.character(ref_seq),"AAATGAAAAACGTTTGCTAGA")[1],str_locate(as.character(ref_seq),"AAATGAAAAACGTTTGCTAGA")[2])
-# 
-# 
-# ### INS -  
-# Run for PB.1.1 (which is i=8). CAGAGTGGCCCAGCCAC is in the ref_seq
-# substring(as.character(reverseComplement(new_seqs[[i]])),str_locate(as.character(ref_seq),"CAGAGTGGCCAGCCACC")[1],str_locate(as.character(ref_seq),"CAGAGTGGCCAGCCACC")[2])
-
-# 
-# 
-# ### INS +
-# # Run for PB.4.3 (which is i=2). TGCACACACGAGCA is in the ref_seq. 
-#substring(as.character((new_seqs[[i]])),str_locate(as.character(ref_seq),"TGCACACACGAGCA")[1],str_locate(as.character(ref_seq),"TGCACACACGAGCA")[2])
-
-# 
+test_variant <- function(new_seqs, gene="PB.22",which_transcript="PB.22.1",ex_seq="ATGTAGATGGGCCCGTC",v = v,x =x,
+                         bam_file = alns, verbose = FALSE ){
+  x_ex <- x[x$gene_id==gene]
+  x_exs <- split(x_ex, x_ex$transcript_id)
+  
+  new_seqs <- generate_variant_transcripts(v = v,x = x,
+                                           bam_file = alns, gene = gene, verbose = FALSE)
+  
+  
+  a <- new_seqs[[paste0(which_transcript,".a")]]
+  b <- new_seqs[[paste0(which_transcript,".b")]]
+  
+  tr_gr <- x_ex[x_ex$transcript_id == which_transcript]
+  gr <- GRanges(seqnames = seqnames(tr_gr),
+                IRanges(ranges(tr_gr)), strand = "+")
+  
+  dss_ref <- getSeq(Hsapiens, gr,
+                    as.character = TRUE)
+  ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
+  
+  alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
+  loc1<-str_locate(as.character(ref_seq),ex_seq)[1]
+  loc2<-str_locate(as.character(ref_seq),ex_seq)[2]
+  
+  if(as.character(strand(x_ex))[1]=='-'){
+    ret_substring <- substring(as.character(reverseComplement(alleles_of_interest)),loc1,loc2)
+  } else {
+    ret_substring <- substring(as.character((alleles_of_interest)),loc1,loc2)
+  }
+  ret_substring
+}
+  
+  
+  
+  
+  
+  
+  

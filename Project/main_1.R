@@ -23,138 +23,28 @@ alns <- "aln_s.bam"
 # filter variants
 
 
-# TESTS: Remember to change gene and run the 4 following lines of code before test!
-gene <- "PB.749"  # Select the correct gene
-new_seqs <- generate_variant_transcripts(v = v,x = x,
-                                         bam_file = alns, gene = gene, verbose = TRUE)
-x_ex <- x[x$gene_id==gene]
-x_exs <- split(x_ex, x_ex$transcript_id)
+#gene <- "PB.22"  # Select the correct gene
+#new_seqs <- generate_variant_transcripts(v = v,x = x,
+#                                         bam_file = alns, gene = gene, verbose = TRUE)
 
 
+(test_variant_seqs_1 <- c("SNP -",test_variant(x, gene="PB.22", which_transcript="PB.22.1" ,ex_seq="ATGTAGATGGGCCCGTC" , v = v,x = x,
+                             bam_file = alns, verbose = FALSE), "the ref seq was ATGTAGATGGGCCCGTC"))
+  
+(test_variant_seqs_2 <- c("SNP +",test_variant(x, gene="PB.749", which_transcript="PB.749.3" ,ex_seq="GGCCCGGATGAGCAGACTCCTGT" , v = v,x = x,
+                                               bam_file = alns, verbose = FALSE), "the ref seq was GGCCCGGATGAGCAGACTCCTGT"))
 
+(test_variant_seqs_3 <- c("DEL -",test_variant(x, gene="PB.22", which_transcript="PB.22.32" ,ex_seq="CCTGGCTGCTGGGGAGGAC" , v = v,x = x,
+                                                                                              bam_file = alns, verbose = FALSE), "the ref seq was CCTGGCTGCTGGGGAGGAC"))
 
-####### 
+(test_variant_seqs_4 <- c("DEL +",test_variant(x, gene="PB.749", which_transcript="PB.749.3" ,ex_seq="AAATGAAAAACGTTTGCTAGA" , v = v,x = x,
+                                               bam_file = alns, verbose = FALSE), "the ref seq was AAATGAAAAACGTTTGCTAGA"))
 
+(test_variant_seqs_5 <- c("INS -",test_variant(x, gene="PB.1", which_transcript="PB.1.1" ,ex_seq="CAGAGTGGCCAGCCAC" , v = v,x = x,
+                                               bam_file = alns, verbose = FALSE), "the ref seq was CAGAGTGGCCAGCCAC"))
 
-# Careful, in case an insertion or a deletion has happened on the left of this area of variation. That is why there might be a shift.
-# ### SNP - 
-a <- new_seqs$PB.22.1.a
-b <- new_seqs$PB.22.1.b
-
-tr_gr <- x_ex[x_ex$transcript_id == "PB.22.1"]
-gr <- GRanges(seqnames = seqnames(tr_gr),
-              IRanges(ranges(tr_gr)), strand = "+")
-
-dss_ref <- getSeq(Hsapiens, gr,
-                  as.character = TRUE)
-ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
-
-alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
-loc1<-str_locate(as.character(ref_seq),"ATGTAGATGGGCCCGTC")[1]
-loc2<-str_locate(as.character(ref_seq),"ATGTAGATGGGCCCGTC")[2]
-
-substring(as.character(reverseComplement(alleles_of_interest)),loc1,loc2)
-# ### SNP +
-# Run for PB.749.3 (which is i=3). GGCCCGGATGAGCAGACTCCTGT is in the ref_seq
-#substring(as.character((new_seqs[[i]])),str_locate(as.character(ref_seq),"GGCCCGGATGAGCAGACTCCTGT")[1],str_locate(as.character(ref_seq),"GGCCCGGATGAGCAGACTCCTGT")[2])
-a <- new_seqs$PB.749.3.a
-b <- new_seqs$PB.749.3.b
-
-tr_gr <- x_ex[x_ex$transcript_id == "PB.749.3"]
-gr <- GRanges(seqnames = seqnames(tr_gr),
-              IRanges(ranges(tr_gr)), strand = "+")
-
-dss_ref <- getSeq(Hsapiens, gr,
-                  as.character = TRUE)
-ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
-
-alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
-loc1<-str_locate(as.character(ref_seq),"GGCCCGGATGAGCAGACTCCTGT")[1]
-loc2<-str_locate(as.character(ref_seq),"GGCCCGGATGAGCAGACTCCTGT")[2]
-
-substring(as.character((alleles_of_interest)),loc1,loc2)
-
-# ### DEL -  
-a <- new_seqs$PB.22.32.a
-b <- new_seqs$PB.22.32.b
-
-tr_gr <- x_ex[x_ex$transcript_id == "PB.22.32"]
-gr <- GRanges(seqnames = seqnames(tr_gr),
-              IRanges(ranges(tr_gr)), strand = "+")
-
-dss_ref <- getSeq(Hsapiens, gr,
-                  as.character = TRUE)
-ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
-
-alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
-loc1<-str_locate(as.character(ref_seq),"CCTGGCTGCTGGGGAGGAC")[1]
-loc2<-str_locate(as.character(ref_seq),"CCTGGCTGCTGGGGAGGAC")[2]
-
-substring(as.character(reverseComplement(alleles_of_interest)),loc1,loc2)
-# 
-# 
-# ### DEL +
-a <- new_seqs$PB.749.3.a
-b <- new_seqs$PB.749.3.b
-
-tr_gr <- x_ex[x_ex$transcript_id == "PB.749.3"]
-gr <- GRanges(seqnames = seqnames(tr_gr),
-              IRanges(ranges(tr_gr)), strand = "+")
-
-dss_ref <- getSeq(Hsapiens, gr,
-                  as.character = TRUE)
-ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
-
-alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
-loc1<-str_locate(as.character(ref_seq),"AAATGAAAAACGTTTGCTAGA")[1]
-loc2<-str_locate(as.character(ref_seq),"AAATGAAAAACGTTTGCTAGA")[2]
-
-substring(as.character((alleles_of_interest)),loc1,loc2)
-# 
-# ### INS -  
-a <- new_seqs$PB.1.1.a
-b <- new_seqs$PB.1.1.b
-
-tr_gr <- x_ex[x_ex$transcript_id == "PB.1.1"]
-gr <- GRanges(seqnames = seqnames(tr_gr),
-              IRanges(ranges(tr_gr)), strand = "+")
-
-dss_ref <- getSeq(Hsapiens, gr,
-                  as.character = TRUE)
-ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
-
-alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
-loc1<-str_locate(as.character(ref_seq),"CAGAGTGGCCAGCCAC")[1]
-loc2<-str_locate(as.character(ref_seq),"CAGAGTGGCCAGCCAC")[2]
-
-substring(as.character(reverseComplement(alleles_of_interest)),loc1,loc2)
-
-# 
-# 
-# ### INS +
-a <- new_seqs$PB.4.3.a
-b <- new_seqs$PB.4.3.b
-
-tr_gr <- x_ex[x_ex$transcript_id == "PB.4.3"]
-gr <- GRanges(seqnames = seqnames(tr_gr),
-              IRanges(ranges(tr_gr)), strand = "+")
-
-dss_ref <- getSeq(Hsapiens, gr,
-                  as.character = TRUE)
-ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
-
-alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
-loc1<-str_locate(as.character(ref_seq),"TGCACACACGAGCA")[1]
-loc2<-str_locate(as.character(ref_seq),"TGCACACACGAGCA")[2]
-
-substring(as.character((alleles_of_interest)),loc1,loc2)
-
-
-
-
-
-
-
+(test_variant_seqs_6 <- c("INS +",test_variant(x, gene="PB.4", which_transcript="PB.4.3" ,ex_seq="TGCACACACGAGCA" , v = v,x = x,
+                                               bam_file = alns, verbose = FALSE), "the ref seq was TGCACACACGAGCA"))
 
 
 
