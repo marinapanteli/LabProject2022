@@ -22,9 +22,148 @@ alns <- "aln_s.bam"
 
 # filter variants
 
-#nr_reads<-100000
-# test function
-gene <- "PB.22" 
+
+# TESTS: Remember to change gene and run the 4 following lines of code before test!
+gene <- "PB.749"  # Select the correct gene
+new_seqs <- generate_variant_transcripts(v = v,x = x,
+                                         bam_file = alns, gene = gene, verbose = TRUE)
+x_ex <- x[x$gene_id==gene]
+x_exs <- split(x_ex, x_ex$transcript_id)
+
+
+
+
+####### 
+
+
+# Careful, in case an insertion or a deletion has happened on the left of this area of variation. That is why there might be a shift.
+# ### SNP - 
+a <- new_seqs$PB.22.1.a
+b <- new_seqs$PB.22.1.b
+
+tr_gr <- x_ex[x_ex$transcript_id == "PB.22.1"]
+gr <- GRanges(seqnames = seqnames(tr_gr),
+              IRanges(ranges(tr_gr)), strand = "+")
+
+dss_ref <- getSeq(Hsapiens, gr,
+                  as.character = TRUE)
+ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
+
+alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
+loc1<-str_locate(as.character(ref_seq),"ATGTAGATGGGCCCGTC")[1]
+loc2<-str_locate(as.character(ref_seq),"ATGTAGATGGGCCCGTC")[2]
+
+substring(as.character(reverseComplement(alleles_of_interest)),loc1,loc2)
+# ### SNP +
+# Run for PB.749.3 (which is i=3). GGCCCGGATGAGCAGACTCCTGT is in the ref_seq
+#substring(as.character((new_seqs[[i]])),str_locate(as.character(ref_seq),"GGCCCGGATGAGCAGACTCCTGT")[1],str_locate(as.character(ref_seq),"GGCCCGGATGAGCAGACTCCTGT")[2])
+a <- new_seqs$PB.749.3.a
+b <- new_seqs$PB.749.3.b
+
+tr_gr <- x_ex[x_ex$transcript_id == "PB.749.3"]
+gr <- GRanges(seqnames = seqnames(tr_gr),
+              IRanges(ranges(tr_gr)), strand = "+")
+
+dss_ref <- getSeq(Hsapiens, gr,
+                  as.character = TRUE)
+ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
+
+alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
+loc1<-str_locate(as.character(ref_seq),"GGCCCGGATGAGCAGACTCCTGT")[1]
+loc2<-str_locate(as.character(ref_seq),"GGCCCGGATGAGCAGACTCCTGT")[2]
+
+substring(as.character((alleles_of_interest)),loc1,loc2)
+
+# ### DEL -  
+a <- new_seqs$PB.22.32.a
+b <- new_seqs$PB.22.32.b
+
+tr_gr <- x_ex[x_ex$transcript_id == "PB.22.32"]
+gr <- GRanges(seqnames = seqnames(tr_gr),
+              IRanges(ranges(tr_gr)), strand = "+")
+
+dss_ref <- getSeq(Hsapiens, gr,
+                  as.character = TRUE)
+ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
+
+alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
+loc1<-str_locate(as.character(ref_seq),"CCTGGCTGCTGGGGAGGAC")[1]
+loc2<-str_locate(as.character(ref_seq),"CCTGGCTGCTGGGGAGGAC")[2]
+
+substring(as.character(reverseComplement(alleles_of_interest)),loc1,loc2)
+# 
+# 
+# ### DEL +
+a <- new_seqs$PB.749.3.a
+b <- new_seqs$PB.749.3.b
+
+tr_gr <- x_ex[x_ex$transcript_id == "PB.749.3"]
+gr <- GRanges(seqnames = seqnames(tr_gr),
+              IRanges(ranges(tr_gr)), strand = "+")
+
+dss_ref <- getSeq(Hsapiens, gr,
+                  as.character = TRUE)
+ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
+
+alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
+loc1<-str_locate(as.character(ref_seq),"AAATGAAAAACGTTTGCTAGA")[1]
+loc2<-str_locate(as.character(ref_seq),"AAATGAAAAACGTTTGCTAGA")[2]
+
+substring(as.character((alleles_of_interest)),loc1,loc2)
+# 
+# ### INS -  
+a <- new_seqs$PB.1.1.a
+b <- new_seqs$PB.1.1.b
+
+tr_gr <- x_ex[x_ex$transcript_id == "PB.1.1"]
+gr <- GRanges(seqnames = seqnames(tr_gr),
+              IRanges(ranges(tr_gr)), strand = "+")
+
+dss_ref <- getSeq(Hsapiens, gr,
+                  as.character = TRUE)
+ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
+
+alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
+loc1<-str_locate(as.character(ref_seq),"CAGAGTGGCCAGCCAC")[1]
+loc2<-str_locate(as.character(ref_seq),"CAGAGTGGCCAGCCAC")[2]
+
+substring(as.character(reverseComplement(alleles_of_interest)),loc1,loc2)
+
+# 
+# 
+# ### INS +
+a <- new_seqs$PB.4.3.a
+b <- new_seqs$PB.4.3.b
+
+tr_gr <- x_ex[x_ex$transcript_id == "PB.4.3"]
+gr <- GRanges(seqnames = seqnames(tr_gr),
+              IRanges(ranges(tr_gr)), strand = "+")
+
+dss_ref <- getSeq(Hsapiens, gr,
+                  as.character = TRUE)
+ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
+
+alleles_of_interest<-DNAStringSet(c(as.character(a), as.character(b)))
+loc1<-str_locate(as.character(ref_seq),"TGCACACACGAGCA")[1]
+loc2<-str_locate(as.character(ref_seq),"TGCACACACGAGCA")[2]
+
+substring(as.character((alleles_of_interest)),loc1,loc2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #gene <- unique(x$gene_id)
 new_seqs <- generate_variant_transcripts(v = v,x = x,
                                          bam_file = alns, gene = gene, verbose = TRUE)

@@ -264,6 +264,7 @@ generate_variant_transcripts <- function(v, x,
 
 
 # Careful, in case an insertion or a deletion has happened on the left of this area of variation. That is why there might be a shift.
+
 # ### SNP - 
 # Run for PB.22.1 (which is i=18). ATGTAGATGGGCCCGTC is in the ref_seq
 ####substring(as.character(reverseComplement(new_seqs[[i]])),str_locate(as.character(ref_seq),"ATGTAGATGGGCCCGTC")[1],str_locate(as.character(ref_seq),"ATGTAGATGGGCCCGTC")[2])
