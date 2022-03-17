@@ -53,7 +53,7 @@ seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex){
     
       for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
       
-        if(start(mtt)[j]==width(ref_seq)){
+        if(start(mtt)[j]==1 && !nchar(str_match(names(mtt[j]), "_\\s*(.*?)\\s*/")[2])>nchar(sub("^[^/]*", "", names(mtt[j])))-1){
           subseq(seqs[[i]], start=width(ref_seq)+1-start(mtt)[j], 
                  end=width(ref_seq)+1-start(mtt)[j]) <- to_insert[[i]][j]
          } else {
@@ -80,7 +80,7 @@ seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex){
        
        for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
          
-         if(start(mtt)[j]==width(ref_seq)){
+         if(start(mtt)[j]==width(ref_seq) && !nchar(str_match(names(mtt[j]), "_\\s*(.*?)\\s*/")[2])>nchar(sub("^[^/]*", "", names(mtt[j])))-1){
            subseq(seqs[[i]], start=start(mtt)[j], 
                   end=start(mtt)[j]) <- to_insert[[i]][j]
          } else {
