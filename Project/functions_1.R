@@ -81,9 +81,10 @@ seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex, ref_base, alt_base){
                end=start[[j]]+1) <- to_insert[[i]][j]
       }
     }
-  }   
+  } 
+    names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])  
   }  
-  names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])
+  
 
 
   
