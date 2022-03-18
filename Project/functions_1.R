@@ -42,7 +42,7 @@ narrowal <- function(variation, ga){
 }
 
 
-seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex){
+seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex, ref_base, alt_base){
   to_insert <- to_insert[lengths(to_insert)!=0]
   seqs <- vector("list", length(to_insert))
  
@@ -53,11 +53,11 @@ seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex){
     
       for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
       
-        if(start(mtt)[j]==1 && !nchar(str_match(names(mtt[j]), "_\\s*(.*?)\\s*/")[2])>nchar(sub("^[^/]*", "", names(mtt[j])))-1){
+        if(start(mtt)[j]==1 && !nchar(ref_base[[j]])>nchar(alt_base[[j]])){
           subseq(seqs[[i]], start=width(ref_seq)+1-start(mtt)[j], 
                  end=width(ref_seq)+1-start(mtt)[j]) <- to_insert[[i]][j]
          } else {
-           if(nchar(str_match(names(mtt[j]), "_\\s*(.*?)\\s*/")[2])>nchar(sub("^[^/]*", "", names(mtt[j])))-1){
+           if(nchar(ref_base[[j]])>nchar(alt_base[[j]])){
              subseq(seqs[[i]], start=width(ref_seq)+1-start(mtt)[j]-1, 
                     end=width(ref_seq)+1-start(mtt)[j]) <- to_insert[[i]][j]
              
@@ -80,11 +80,11 @@ seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex){
        
        for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
          
-         if(start(mtt)[j]==width(ref_seq) && !nchar(str_match(names(mtt[j]), "_\\s*(.*?)\\s*/")[2])>nchar(sub("^[^/]*", "", names(mtt[j])))-1){
+         if(start(mtt)[j]==width(ref_seq) && !nchar(ref_base[[j]])>nchar(alt_base[[j]])){
            subseq(seqs[[i]], start=start(mtt)[j], 
                   end=start(mtt)[j]) <- to_insert[[i]][j]
          } else {
-           if (nchar(str_match(names(mtt[j]), "_\\s*(.*?)\\s*/")[2])>nchar(sub("^[^/]*", "", names(mtt[j])))-1) {
+           if (nchar(ref_base[[j]])>nchar(alt_base[[j]])) {
              subseq(seqs[[i]], start=start(mtt)[j], 
                     end=start(mtt)[j]+1) <- to_insert[[i]][j]
            }else {
@@ -223,10 +223,11 @@ generate_variant_transcripts <- function(v, x,
       })
       
       #nr_reads <-min(nr_reads,length(df1[1][[1]]))
-      
+      ref_base <- variation_regs[nm]$REF
+      alt_base <- variation_regs[nm]$ALT
        #get alleles and insert them into reference sequence
        to_insert <- get_alleles(df1) 
-       new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, mtt, x_ex)
+       new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, mtt, x_ex,ref_base, alt_base)
       # 
     }
   }
@@ -263,7 +264,7 @@ generate_variant_transcripts <- function(v, x,
 }
 
 
-test_variant <- function(new_seqs, gene="PB.22",which_transcript="PB.22.1",ex_seq="ATGTAGATGGGCCCGTC",v = v,x =x,
+test_variant <- function(new_seqs, gene, which_transcript,ex_seq,v = v,x =x,
                          bam_file = alns, verbose = FALSE ){
   x_ex <- x[x$gene_id==gene]
   x_exs <- split(x_ex, x_ex$transcript_id)
