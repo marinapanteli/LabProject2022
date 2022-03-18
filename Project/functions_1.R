@@ -53,40 +53,21 @@ seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex, ref_base, alt_base){
   for(i in 1:length(to_insert)) { # loop through alleles
     seqs[[i]] <- ref_seq
     for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
-    if(as.character(strand(mtt)[1])=='-'){
-         start[j] = width(ref_seq)+1-start(mtt)[j]
-    }else{
-        start[j] = start(mtt)[j]
-    }
+    
+      start[j] = start(mtt)[j]
+    
     # Check if the variation is on the very last base. Deletion can deal with it normally but the other types of variation are concerning.
     if(start(mtt)[j]== width(ref_seq) && !nchar(ref_base[[j]])>nchar(alt_base[[j]])){
       subseq(seqs[[i]], start=start[[j]], 
              end=start[[j]]) <- to_insert[[i]][j]
     }else{
       
-      if(nchar(ref_base[[j]])>nchar(alt_base[[j]])){
-        
-        if(as.character(strand(mtt)[1])=='-'){
-         
-           subseq(seqs[[i]], start=start[[j]]-1, 
-                 end= start[[j]]) <- to_insert[[i]][j]
-                 
-        }else{
-          subseq(seqs[[i]], start=start[[j]], 
-                 end= start[[j]] +1)<- to_insert[[i]][j]
-              
-        }
-      }else{
-        subseq(seqs[[i]], start=start[[j]], 
-               end=start[[j]]+1) <- to_insert[[i]][j]
-      }
+      subseq(seqs[[i]], start=start[[j]], 
+             end=start[[j]]+1) <- to_insert[[i]][j]
     }
   } 
     names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])  
   }  
-  
-
-
   
    
   seqs <- unlist(DNAStringSetList(seqs))
@@ -188,21 +169,27 @@ generate_variant_transcripts <- function(v, x,
       
       # extract transcript seq from genome + 
       # positions where we must insert variation (transcript coord.)
-      tr_gr <- x_ex[x_ex$transcript_id == tr]
+       tr_gr <- x_ex[x_ex$transcript_id == tr]
+      # 
+      # gr <- GRanges(seqnames = seqnames(tr_gr),
+      #                 IRanges(ranges(tr_gr)), strand = "+")
+      # 
+      # 
+      # 
+      # 
+      # names(ref_seq) <- tr
+      # 
+      # mtt <- mapToTranscripts(variation_regs[nm], x_exs[tr])
+      # 
       
-      gr <- GRanges(seqnames = seqnames(tr_gr),
-                      IRanges(ranges(tr_gr)), strand = "+")
-     
-     
-      
-      
-      dss_ref <- getSeq(Hsapiens, gr,
-                        as.character = TRUE)
+      strand(tr_gr) <- "+"
+      grl <- GRangesList(tr_gr)
+      names(grl) <- tr
+      mtt <- mapToTranscripts(variation_regs[nm], grl)
+      dss_ref <- getSeq(Hsapiens, grl,
+                         as.character = TRUE)
       ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
-      names(ref_seq) <- tr
-      
-      mtt <- mapToTranscripts(variation_regs[nm], x_exs[tr])
-      
+     
       df <- df_tot[nm]
       
       df1 <- lapply(df, function(u) {

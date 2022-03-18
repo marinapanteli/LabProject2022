@@ -29,22 +29,22 @@ alns <- "aln_s.bam"
 
 
 (test_variant_seqs_1 <- c("SNP -",test_variant(x, gene="PB.22", which_transcript="PB.22.1" ,ex_seq="ATGTAGATGGGCCCGTC" , v = v,x = x,
-                             bam_file = alns, verbose = FALSE), "the ref seq was ATGTAGATGGGCCCGTC"))
+                             bam_file = alns, verbose = FALSE), "the ref seq was ATGTAGATGGGCCCGTC and we know: chr1:1319461_C/G"))
   
-(test_variant_seqs_2 <- c("SNP +",test_variant(x, gene="PB.749", which_transcript="PB.749.3" ,ex_seq="GGCCCGGATGAGCAGACTCCTGT" , v = v,x = x,
-                                               bam_file = alns, verbose = FALSE), "the ref seq was GGCCCGGATGAGCAGACTCCTGT"))
+(test_variant_seqs_2 <- c("SNP +",test_variant(x, gene="PB.749", which_transcript="PB.749.1" ,ex_seq="GGCCCGGATGAGCAGACTCCTGT" , v = v,x = x,
+                                               bam_file = alns, verbose = FALSE), "the ref seq was GGCCCGGATGAGCAGACTCCTGT and we know: chr1:95117534_G/C"))
 
 (test_variant_seqs_3 <- c("DEL -",test_variant(x, gene="PB.22", which_transcript="PB.22.32" ,ex_seq="CCTGGCTGCTGGGGAGGAC" , v = v,x = x,
-                                                                                              bam_file = alns, verbose = FALSE), "the ref seq was CCTGGCTGCTGGGGAGGAC"))
+                                                                                              bam_file = alns, verbose = FALSE), "the ref seq was CCTGGCTGCTGGGGAGGAC and we know chr1:1320023_TG/T"))
 
 (test_variant_seqs_4 <- c("DEL +",test_variant(x, gene="PB.749", which_transcript="PB.749.3" ,ex_seq="AAATGAAAAACGTTTGCTAGA" , v = v,x = x,
-                                               bam_file = alns, verbose = FALSE), "the ref seq was AAATGAAAAACGTTTGCTAGA"))
+                                               bam_file = alns, verbose = FALSE), "the ref seq was AAATGAAAAACGTTTGCTAGA and we know: chr1:95194468_AC/A"))
 
 (test_variant_seqs_5 <- c("INS -",test_variant(x, gene="PB.1", which_transcript="PB.1.1" ,ex_seq="CAGAGTGGCCAGCCAC" , v = v,x = x,
-                                               bam_file = alns, verbose = FALSE), "the ref seq was CAGAGTGGCCAGCCAC"))
+                                               bam_file = alns, verbose = FALSE), "the ref seq was CAGAGTGGCCAGCCAC and we know : chr1:15903_G/GC"))
 
 (test_variant_seqs_6 <- c("INS +",test_variant(x, gene="PB.4", which_transcript="PB.4.3" ,ex_seq="TGCACACACGAGCA" , v = v,x = x,
-                                               bam_file = alns, verbose = FALSE), "the ref seq was TGCACACACGAGCA"))
+                                               bam_file = alns, verbose = FALSE), "the ref seq was TGCACACACGAGCA and we know: chr1:855316_C/CAT"))
 
 
 
