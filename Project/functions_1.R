@@ -35,7 +35,6 @@ narrowal <- function(variation, ga){
     gr <- GRanges(seqnames(ga)[1],
                   ir, strand = "+")
     na <- narrowAlignments(ga, gr)
-    #as.character(mcols(na)$seq)
     mcols(na)
   })
   
@@ -46,61 +45,47 @@ seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex, ref_base, alt_base){
   to_insert <- to_insert[lengths(to_insert)!=0]
   seqs <- vector("list", length(to_insert))
  
-   if(as.character(strand(mtt)[1])=='-'){
-     
-     for(i in 1:length(to_insert)) { # loop through alleles
-      seqs[[i]] <- ref_seq
-    
-      for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
+  start <- vector("list", length(mtt))
+ 
+ 
+  
+  
+  for(i in 1:length(to_insert)) { # loop through alleles
+    seqs[[i]] <- ref_seq
+    for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
+    if(as.character(strand(mtt)[1])=='-'){
+         start[j] = width(ref_seq)+1-start(mtt)[j]
+    }else{
+        start[j] = start(mtt)[j]
+    }
+    # Check if the variation is on the very last base. Deletion can deal with it normally but the other types of variation are concerning.
+    if(start(mtt)[j]== width(ref_seq) && !nchar(ref_base[[j]])>nchar(alt_base[[j]])){
+      subseq(seqs[[i]], start=start[[j]], 
+             end=start[[j]]) <- to_insert[[i]][j]
+    }else{
       
-        if(start(mtt)[j]==1 && !nchar(ref_base[[j]])>nchar(alt_base[[j]])){
-          subseq(seqs[[i]], start=width(ref_seq)+1-start(mtt)[j], 
-                 end=width(ref_seq)+1-start(mtt)[j]) <- to_insert[[i]][j]
-         } else {
-           if(nchar(ref_base[[j]])>nchar(alt_base[[j]])){
-             subseq(seqs[[i]], start=width(ref_seq)+1-start(mtt)[j]-1, 
-                    end=width(ref_seq)+1-start(mtt)[j]) <- to_insert[[i]][j]
-             
-           }
-           else{
-            subseq(seqs[[i]], start=width(ref_seq)+1-start(mtt)[j], 
-                   end=width(ref_seq)+1-start(mtt)[j]+1) <- to_insert[[i]][j]
-          }
-         }
-      }     
-    # remove '-'
-      #seqs[[i]] <- DNAStringSet(gsub("-","",seqs[[i]]))
-    
-      names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])
-     }
-   }else{
-     
-     for(i in 1:length(to_insert)) { # loop through alleles
-       seqs[[i]] <- ref_seq
-       
-       for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
+      if(nchar(ref_base[[j]])>nchar(alt_base[[j]])){
+        
+        if(as.character(strand(mtt)[1])=='-'){
          
-         if(start(mtt)[j]==width(ref_seq) && !nchar(ref_base[[j]])>nchar(alt_base[[j]])){
-           subseq(seqs[[i]], start=start(mtt)[j], 
-                  end=start(mtt)[j]) <- to_insert[[i]][j]
-         } else {
-           if (nchar(ref_base[[j]])>nchar(alt_base[[j]])) {
-             subseq(seqs[[i]], start=start(mtt)[j], 
-                    end=start(mtt)[j]+1) <- to_insert[[i]][j]
-           }else {
-             subseq(seqs[[i]], start=start(mtt)[j], 
-                    end=start(mtt)[j]+1) <- to_insert[[i]][j]
-           }
-           
-         }
-       }     
-       # remove '-'
-       seqs[[i]] <- DNAStringSet(gsub("-","",seqs[[i]]))
-       
-       names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])
-     
-     }
-   }
+           subseq(seqs[[i]], start=start[[j]]-1, 
+                 end= start[[j]]) <- to_insert[[i]][j]
+                 
+        }else{
+          subseq(seqs[[i]], start=start[[j]], 
+                 end= start[[j]] +1)<- to_insert[[i]][j]
+              
+        }
+      }else{
+        subseq(seqs[[i]], start=start[[j]], 
+               end=start[[j]]+1) <- to_insert[[i]][j]
+      }
+    }
+  }   
+  }  
+  names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])
+
+
   
    
   seqs <- unlist(DNAStringSetList(seqs))
@@ -110,6 +95,8 @@ seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex, ref_base, alt_base){
   
   seqs
 }
+
+
 
 get_alleles <- function(df){
   z <- matrix(unlist(df), ncol=length(df), 
@@ -222,10 +209,11 @@ generate_variant_transcripts <- function(v, x,
         as.character(u$seq[keep])
       })
       
-      #nr_reads <-min(nr_reads,length(df1[1][[1]]))
       ref_base <- variation_regs[nm]$REF
       alt_base <- variation_regs[nm]$ALT
+      
        #get alleles and insert them into reference sequence
+      
        to_insert <- get_alleles(df1) 
        new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, mtt, x_ex,ref_base, alt_base)
       # 
@@ -235,8 +223,9 @@ generate_variant_transcripts <- function(v, x,
   
     transcripts_unmod <- setdiff(names(x_exs), transcripts)
     seqs_unmod <- vector("list", length(transcripts_unmod))
-  # # 
-  # # # check for transcripts with NO overlap
+  
+     # check for transcripts with NO overlap
+    
     if(!isEmpty(transcripts_unmod)) {
       
       for (j in seq_len(length(transcripts_unmod))) {
@@ -260,7 +249,6 @@ generate_variant_transcripts <- function(v, x,
     
     new_seqs <- append(new_seqs, seqs_unmod)
     unlist(DNAStringSetList(new_seqs))  
-  #nr_reads
 }
 
 
