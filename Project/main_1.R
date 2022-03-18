@@ -22,10 +22,9 @@ alns <- "aln_s.bam"
 
 # filter variants
 
-
-#gene <- "PB.22"  # Select the correct gene
-#new_seqs <- generate_variant_transcripts(v = v,x = x,
-#                                         bam_file = alns, gene = gene, verbose = TRUE)
+# 
+  gene <- "PB.4"  # Select the correct gene
+  new_seqs <- generate_variant_transcripts(v = v,x = x,bam_file = alns, gene = gene, verbose = TRUE)
 
 
 (test_variant_seqs_1 <- c("SNP -",test_variant(x, gene="PB.22", which_transcript="PB.22.1" ,ex_seq="ATGTAGATGGGCCCGTC" , v = v,x = x,
@@ -46,7 +45,11 @@ alns <- "aln_s.bam"
 (test_variant_seqs_6 <- c("INS +",test_variant(x, gene="PB.4", which_transcript="PB.4.3" ,ex_seq="TGCACACACGAGCA" , v = v,x = x,
                                                bam_file = alns, verbose = FALSE), "the ref seq was TGCACACACGAGCA and we know: chr1:855316_C/CAT"))
 
+(test_NO_variant_seqs_7 <- c("-",test_NO_variant(x, gene="PB.2", which_transcript="PB.2.1" ,ex_seq="CACCAGCCAGGGGGTCC" , v = v,x = x,
+                                               bam_file = alns, verbose = FALSE), "the ref seq is CACCAGCCAGGGGGTCC"))
 
+(test_NO_variant_seqs_8 <- c("+",test_NO_variant(x, gene="PB.6", which_transcript="PB.6.1" ,ex_seq="CTGCCCAGGTGTCTCC" , v = v,x = x,
+                                              bam_file = alns, verbose = FALSE), "the ref seq is CTGCCCAGGTGTCTCC"))
 
 
 

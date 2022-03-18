@@ -1,20 +1,44 @@
+# get_read_ranges <- function(ga) {
+#   nm_new <- names(ga)
+#   rngs_new <- cigarRangesAlongReferenceSpace(cigar(ga),
+#                                          pos = start(ga),
+#                                          drop.empty.ranges = FALSE,
+#                                          N.regions.removed = FALSE,
+#                                          with.ops = TRUE,
+#                                          reduce.ranges = FALSE) %>%
+#     setNames(nm_new)
+# 
+#   nms_new <- rep(nm_new, lengths(rngs_new))
+#   rngs_u_new <- unlist(rngs_new, use.names = FALSE)
+# 
+#   keep_new <- names(rngs_u_new) != "N"
+#   rngs_new <- split(rngs_u_new[keep_new], nms_new[keep_new])[nm_new]
+# 
+#   dokimh2  <- lapply(rngs_new, function(u) {
+#     nm_new <- names(u)
+#     names(u) <- NULL
+#     u[]
+#   })
+# 
+#   dokimh2
+# 
+# }
 get_read_ranges <- function(ga) {
-  nm <- names(ga)
-  rngs <- cigarRangesAlongReferenceSpace(cigar(ga), 
+  rngs <- cigarRangesAlongReferenceSpace(cigar(ga),
                                          pos = start(ga),
                                          drop.empty.ranges = FALSE,
                                          N.regions.removed = FALSE,
                                          with.ops = TRUE,
-                                         reduce.ranges = FALSE) %>% 
-    setNames(nm)
-  
-  nms <- rep(nm, lengths(rngs))
-  rngs_u <- unlist(rngs, use.names = FALSE)
-  
-  keep <- names(rngs_u) != "N"
-  split(rngs_u[keep], nms[keep])[nm]
+                                         reduce.ranges = FALSE)
+  names(rngs) <- names(ga)
+  # remove 'N' ranges
+  rngs <- lapply(rngs, function(u) {
+    nm <- names(u)
+    names(u) <- NULL
+    u[nm != "N"]
+  })
+  IRangesList(rngs)
 }
-
 
 
 extract_exons <- function(x, gene = NULL) {
@@ -42,41 +66,37 @@ narrowal <- function(variation, ga){
 }
 
 
-seqs_with_var <- function(to_insert, ref_seq, mtt, x_ex, ref_base, alt_base){
+seqs_with_var <- function(to_insert, ref_seq, mtt, ref_base, alt_base){
   to_insert <- to_insert[lengths(to_insert)!=0]
   seqs <- vector("list", length(to_insert))
- 
-  start <- vector("list", length(mtt))
- 
- 
   
+  start <- vector("list", length(mtt))
   
   for(i in 1:length(to_insert)) { # loop through alleles
     seqs[[i]] <- ref_seq
     for(j in length(mtt):1) {     # loop through variations in 3'->5' direction
-    
-      start[j] = start(mtt)[j]
-    
-    # Check if the variation is on the very last base. Deletion can deal with it normally but the other types of variation are concerning.
-    if(start(mtt)[j]== width(ref_seq) && !nchar(ref_base[[j]])>nchar(alt_base[[j]])){
-      subseq(seqs[[i]], start=start[[j]], 
-             end=start[[j]]) <- to_insert[[i]][j]
-    }else{
       
-      subseq(seqs[[i]], start=start[[j]], 
-             end=start[[j]]+1) <- to_insert[[i]][j]
-    }
-  } 
+      #start[j] = start(mtt)[j]
+      st <- start(mtt)[j]
+      en <- st+1
+      
+      
+      # Check if the variation is on the very last base. Deletion can deal with it normally but the other types of variation are concerning.
+      if(start(mtt)[j]== width(ref_seq) && !nchar(ref_base[[j]])>nchar(alt_base[[j]])){
+        # subseq(seqs[[i]], start=start[[j]], 
+        #        end=start[[j]]) <- to_insert[[i]][j]
+        en <- st
+      }
+        
+      subseq(seqs[[i]], start=st, 
+               end=en) <- to_insert[[i]][j]
+      
+    } 
     names(seqs[[i]]) <- paste0(names(seqs[[i]]), ".", letters[i])  
   }  
   
-   
   seqs <- unlist(DNAStringSetList(seqs))
   
-  if (as.character(strand(x_ex)[1]) == "-")
-    seqs <- reverseComplement(seqs)
-  
-  seqs
 }
 
 
@@ -127,7 +147,9 @@ generate_variant_transcripts <- function(v, x,
     variation_regs <- unique(S4Vectors::first(fop))
     
     # ranges for each read
+    # rngs_old <- get_read_ranges_old(ga) ##
     rngs <- get_read_ranges(ga) ##
+    
     
     # intersect all reads w/ all transcripts, form matrix
     m <- matrix(0,
@@ -170,7 +192,7 @@ generate_variant_transcripts <- function(v, x,
       
       # extract transcript seq from genome + 
       # positions where we must insert variation (transcript coord.)
-       tr_gr <- x_ex[x_ex$transcript_id == tr]
+      tr_gr <- x_ex[x_ex$transcript_id == tr]
       # 
       # gr <- GRanges(seqnames = seqnames(tr_gr),
       #                 IRanges(ranges(tr_gr)), strand = "+")
@@ -188,9 +210,9 @@ generate_variant_transcripts <- function(v, x,
       names(grl) <- tr
       mtt <- mapToTranscripts(variation_regs[nm], grl)
       dss_ref <- getSeq(Hsapiens, grl,
-                         as.character = TRUE)
+                        as.character = TRUE)
       ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
-     
+      
       df <- df_tot[nm]
       
       df1 <- lapply(df, function(u) {
@@ -201,44 +223,62 @@ generate_variant_transcripts <- function(v, x,
       ref_base <- variation_regs[nm]$REF
       alt_base <- variation_regs[nm]$ALT
       
-       #get alleles and insert them into reference sequence
+      #get alleles and insert them into reference sequence
       
-       to_insert <- get_alleles(df1) 
-       new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, mtt, x_ex,ref_base, alt_base)
+      to_insert <- get_alleles(df1) 
+      new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, mtt,ref_base, alt_base)
       # 
     }
   }
   
   
-    transcripts_unmod <- setdiff(names(x_exs), transcripts)
-    seqs_unmod <- vector("list", length(transcripts_unmod))
+  transcripts_unmod <- setdiff(names(x_exs), transcripts)
+  seqs_unmod <- vector("list", length(transcripts_unmod))
   
-     # check for transcripts with NO overlap
+  # check for transcripts with NO overlap
+  
+  if(!isEmpty(transcripts_unmod)) {
     
-    if(!isEmpty(transcripts_unmod)) {
+    for (j in seq_len(length(transcripts_unmod))) {
+      tr_unmod <- transcripts_unmod[j]
       
-      for (j in seq_len(length(transcripts_unmod))) {
-        tr_unmod <- transcripts_unmod[j]
-        if(verbose)
-          message(tr_unmod)
-        
-        dss_ref_unmod <- getSeq(Hsapiens, 
-                                x_ex[x_ex$transcript_id == tr_unmod],
-                                as.character = TRUE)
-        ref_seq_unmod <- DNAStringSet(paste(dss_ref_unmod,collapse = ""))
-        names(ref_seq_unmod) <- tr_unmod
-        
-        if(as.character(strand(x_ex[x_ex$transcript_id == tr_unmod])[1])=='-'){
-          ref_seq_unmod <- reverseComplement(ref_seq_unmod)
-        }
-        
-        seqs_unmod[[j]] <- ref_seq_unmod
-      }
+      tr_gr_unmod <- x_ex[x_ex$transcript_id == tr_unmod]
+      
+      if(verbose)
+        message(tr_unmod)
+      
+      
+      strand(tr_gr_unmod) <- "+"
+      grl_unmod <- GRangesList(tr_gr_unmod)
+      names(grl_unmod) <- tr_unmod
+      dss_ref_unmod <- getSeq(Hsapiens, grl_unmod,
+                              as.character = TRUE)
+      ref_seq_unmod <- DNAStringSet(paste(dss_ref_unmod, collapse = ""))
+
+      names(ref_seq_unmod) <- tr_unmod
+
+      seqs_unmod[[j]] <- ref_seq_unmod
     }
-    
-    new_seqs <- append(new_seqs, seqs_unmod)
-    unlist(DNAStringSetList(new_seqs))  
+  }
+  
+  
+  
+  if(as.character(strand(x_ex))[1]=='-'){
+    seqs_unmod <- lapply(seqs_unmod, function(u) {
+      rev_unmod<-reverseComplement(u)
+    }) ############
+    new_seqs <- lapply(new_seqs, function(u) {
+      rev_unmod<-reverseComplement(u)
+    })
+  }
+  
+  
+  new_seqs <- append(new_seqs, seqs_unmod)
+  unlist(DNAStringSetList(new_seqs))  
 }
+
+
+
 
 
 test_variant <- function(new_seqs, gene, which_transcript,ex_seq,v = v,x =x,
@@ -272,10 +312,37 @@ test_variant <- function(new_seqs, gene, which_transcript,ex_seq,v = v,x =x,
   }
   ret_substring
 }
+
+test_NO_variant <- function(new_seqs, gene, which_transcript,ex_seq,v = v,x =x,
+                         bam_file = alns, verbose = FALSE ){
+  x_ex <- x[x$gene_id==gene]
+  x_exs <- split(x_ex, x_ex$transcript_id)
+  
+  new_seqs <- generate_variant_transcripts(v = v,x = x,
+                                           bam_file = alns, gene = gene, verbose = FALSE)
   
   
+  a <- new_seqs[[which_transcript]]
+  tr_gr <- x_ex[x_ex$transcript_id == which_transcript]
+  gr <- GRanges(seqnames = seqnames(tr_gr),
+                IRanges(ranges(tr_gr)), strand = "+")
   
+  dss_ref <- getSeq(Hsapiens, gr,
+                    as.character = TRUE)
+  ref_seq <- DNAStringSet(paste(dss_ref, collapse = ""))
   
+  alleles_of_interest<-DNAStringSet(c(as.character(a)))
+  loc1<-str_locate(as.character(ref_seq),ex_seq)[1]
+  loc2<-str_locate(as.character(ref_seq),ex_seq)[2]
   
-  
-  
+  if(as.character(strand(x_ex))[1]=='-'){
+    ret_substring <- substring(as.character(reverseComplement(alleles_of_interest)),loc1,loc2)
+  } else {
+    ret_substring <- substring(as.character((alleles_of_interest)),loc1,loc2)
+  }
+  ret_substring
+}
+
+
+
+
