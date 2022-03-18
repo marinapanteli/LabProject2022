@@ -1,19 +1,20 @@
 get_read_ranges <- function(ga) {
+  nm <- names(ga)
   rngs <- cigarRangesAlongReferenceSpace(cigar(ga), 
                                          pos = start(ga),
                                          drop.empty.ranges = FALSE,
                                          N.regions.removed = FALSE,
                                          with.ops = TRUE,
-                                         reduce.ranges = FALSE)
-  names(rngs) <- names(ga)
-  # remove 'N' ranges
-  rngs <- lapply(rngs, function(u) {
-    nm <- names(u)
-    names(u) <- NULL
-    u[nm != "N"]
-  })
-  IRangesList(rngs)
+                                         reduce.ranges = FALSE) %>% 
+    setNames(nm)
+  
+  nms <- rep(nm, lengths(rngs))
+  rngs_u <- unlist(rngs, use.names = FALSE)
+  
+  keep <- names(rngs_u) != "N"
+  split(rngs_u[keep], nms[keep])[nm]
 }
+
 
 
 extract_exons <- function(x, gene = NULL) {
