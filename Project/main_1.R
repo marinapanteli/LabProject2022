@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
   library(stringr) 
 })
 
-source("Project/functions_1.R")
+source("functions_1.R")
 
 x <- import("wtc11_corrected.gtf")
 x <- extract_exons(x)
@@ -130,49 +130,3 @@ system.time({
 # gene = "PB.1"; bam_file = "aln_s.bam"; verbose = TRUE
 # gene = "PB.22"; bam_file = "aln_s.bam"; verbose = TRUE
 # # then step through generate_variant_transcripts()
-
-
-# big long ugly test for get_read_ranges()
-gene = "PB.22"; bam_file = "aln_s.bam"; verbose = TRUE
-# extract exons for given gene
-x_ex <- x[x$gene_id==gene] ##
-# split into transcripts
-x_exs <- split(x_ex, x_ex$transcript_id)
-
-# find overlaps b/w variation and this gene
-fop <- findOverlapPairs(rowRanges(v), x_ex)
-transcripts <- unique(S4Vectors::second(fop)$transcript_id)
-
-new_seqs <- vector("list", length(transcripts))
-# read alignments for this region
-gr <- range(x_ex)
-sbp <- ScanBamParam(which = gr, what = scanBamWhat())
-bamWhat(sbp) <- "seq"
-ga <- readGAlignments(bam_file,
-                      param = sbp, use.names = TRUE)
-
-if(verbose)
-  message(paste0(length(ga), " total reads."))
-
-# full set of variants for this region
-variation_regs <- unique(S4Vectors::first(fop))
-
-# ranges for each read
-# rngs_old <- get_read_ranges_old(ga) ##
-rngs <- get_read_ranges(ga) ##
-# intersect all reads w/ all transcripts, form matrix
-m <- matrix(0,
-            ncol = length(variation_regs),
-            nrow = length(rngs),
-            dimnames = list(names(rngs), names(variation_regs))
-)
-rngs_u <- unlist(rngs)
-fo <- findOverlaps(rngs_u, ranges(variation_regs))
-
-# which variations in a certain alignment read, and
-# below notate with 0/1 if absent/present
-pop <- split(subjectHits(fo),
-             names(rngs_u)[queryHits(fo)])
-for (i in 1:length(pop)) {
-  m[names(pop)[i], unique(pop[[i]])] <- 1
-}
