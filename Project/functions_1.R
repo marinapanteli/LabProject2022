@@ -56,6 +56,7 @@ narrowal <- function(variation, ga){
   names(starts) <- names(variation)
   
   lapply(starts, function(u) {
+
     ir <- IRanges(start = u, width = 2)
     gr <- GRanges(seqnames(ga)[1],
                   ir, strand = "+")
@@ -78,8 +79,12 @@ seqs_with_var <- function(to_insert, ref_seq, mtt, ref_base, alt_base){
       
       #start[j] = start(mtt)[j]
       st <- start(mtt)[j]
-      en <- st+1
       
+      if(nchar(ref_base[[j]])>2){
+        en <- st + nchar(ref_base[[j]])-1
+      }else{
+        en <- st+1
+        }
       
       # Check if the variation is on the very last base. Deletion can deal with it normally but the other types of variation are concerning.
       if(start(mtt)[j]== width(ref_seq) && !nchar(ref_base[[j]])>nchar(alt_base[[j]])){
@@ -181,39 +186,39 @@ generate_variant_transcripts <- function(v, x,
     df_tot <- narrowal(variation_regs,ga)
     
     ###########
-    
+    apoth<-m
 
-    for (p in 1:length(df_tot)) {
-      
-      if(width(variation_regs$REF[p])>length(variation_regs$ALT[p])){ # Deletions
-        
-        for(q in 1:length(df_tot[p][[1]]$seq)){
-          
-          if(df_tot[p][[1]]$seq[q]!=variation_regs$REF[p] && df_tot[p][[1]]$seq[q]!=variation_regs$REF[p] ){
-            
-            read_name <- rownames(df_tot[p][[1]])
-            m[read_name,p]<-0
-            
-          }
-          
-        }
-        
-      }else{ # SNPs, Insertions
-        
-        for(q in 1:length(df_tot[p][[1]]$seq)){
-          
-          if(substring(df_tot[p][[1]]$seq[q],1,width(df_tot[p][[1]]$seq[q])-1)!=variation_regs$REF[p][[1]] && substring(df_tot[p][[1]]$seq[q],1,width(df_tot[p][[1]]$seq[q])-1)!=variation_regs$ALT[p][[1]]){
-            
-            read_name <- rownames(df_tot[p][[1]])
-            m[read_name,p]<-0
-            
-          }
-          
-        }
-        
-      }
-      
-    }
+    # for (p in 1:length(df_tot)) {
+    #   
+    #   if(width(variation_regs$REF[p])>length(variation_regs$ALT[p])){ # Deletions
+    #     
+    #     for(q in 1:length(df_tot[p][[1]]$seq)){
+    #       
+    #       if(df_tot[p][[1]]$seq[q]!=variation_regs$REF[p] && df_tot[p][[1]]$seq[q]!=variation_regs$REF[p] ){
+    #         
+    #         read_name <- rownames(df_tot[p][[1]])[q]
+    #         m[read_name,p]<-0
+    #         
+    #       }
+    #       
+    #     }
+    #     
+    #   }else{ # SNPs, Insertions
+    #     
+    #     for(q in 1:length(df_tot[p][[1]]$seq)){
+    #       
+    #       if(substring(df_tot[p][[1]]$seq[q],1,width(df_tot[p][[1]]$seq[q])-1)!=as.character(variation_regs$REF[p][[1]]) && substring(df_tot[p][[1]]$seq[q],1,width(df_tot[p][[1]]$seq[q])-1)!=as.character(variation_regs$ALT[p][[1]])){
+    #         
+    #         read_name <- rownames(df_tot[p][[1]])[q]
+    #         m[read_name,p]<-0
+    #         
+    #       }
+    #       
+    #     }
+    #     
+    #   }
+    #   
+    # }
     
     
     
@@ -232,20 +237,36 @@ generate_variant_transcripts <- function(v, x,
       rds <- rownames(m1)[w]
       m2 <- subset(m1, rownames(m1) %in% rds)
       
-      # extract transcript seq from genome + 
-      # positions where we must insert variation (transcript coord.)
+      variation_regs_spec <- variation_regs[names(variation_regs)%in%colnames(m2)]
+      
+      df_tot_spec <- df_tot[names(df_tot)%in%colnames(m2)]
+      
+      df_tot_specs <- lapply(df_tot_spec, function(u){as.data.frame(u)[rownames(as.data.frame(u)) %in% rownames(m2),]})
+      
+      
+      for (p in 1:length(m2)) {
+        
+        for(q in 1:dim(m2)[1]){
+          
+          if(width(variation_regs_spec$REF[p])>length(variation_regs_spec$ALT[p])){ # Deletions
+            
+            read_nuc <- df_tot_specs[[p]][q]
+            
+          }else{
+              
+            read_nuc <- substring(df_tot_specs[[p]][q],1,nchar(df_tot_specs[[p]][q])-1)
+          }
+          
+          if(read_nuc!=as.character(variation_regs_spec$REF[p]) && read_nuc!=as.character(variation_regs_spec$ALT[[p]])){
+            
+            m2[q,p]<-0
+            
+          }
+        }
+      }      
+
       tr_gr <- x_ex[x_ex$transcript_id == tr]
-      # 
-      # gr <- GRanges(seqnames = seqnames(tr_gr),
-      #                 IRanges(ranges(tr_gr)), strand = "+")
-      # 
-      # 
-      # 
-      # 
-      # names(ref_seq) <- tr
-      # 
-      # mtt <- mapToTranscripts(variation_regs[nm], x_exs[tr])
-      # 
+
       
       strand(tr_gr) <- "+"
       grl <- GRangesList(tr_gr)

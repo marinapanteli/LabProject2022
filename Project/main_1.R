@@ -31,19 +31,17 @@ if (file.exists(fn)) {
 
 colnames_info_file <- paste(c("Transcript", "Ref/Alt_Nucleotide", "Genomic_Location", "Transcript_Location", "Allele_a", "Allele_b"), collapse="    ")
 write(colnames_info_file, file = "my_file.txt", append = TRUE)
-bam_file = alns
-verbose = FALSE
-v=v
-x=x
-gene="PB.1"
-
-
+# bam_file = alns
+# verbose = FALSE
+# v=v
+# x=x
+#  gene="PB.22"
+# 
 # genes <- unique(x$gene_id)
 # X<-genes
 # X<-X[1:5]
 # bam_file = alns
 # verbose = TRUE
-# #gene<-"PB.749."
 # oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
 #            bam_file = alns, verbose = TRUE)
 
