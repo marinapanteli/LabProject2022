@@ -20,12 +20,37 @@ v <- v[keep]
 
 alns <- "aln_s.bam"
 
-# filter variants
+# For info file
 
-# 
-  gene <- "PB.4"  # Select the correct gene
-  new_seqs <- generate_variant_transcripts(v = v,x = x,bam_file = alns, gene = gene, verbose = TRUE)
+fn <- "my_file.txt"
+#Check its existence
+if (file.exists(fn)) {
+  #Delete file if it exists
+  file.remove(fn)
+}
 
+colnames_info_file <- paste(c("Transcript", "Ref/Alt_Nucleotide", "Genomic_Location", "Transcript_Location", "Allele_a", "Allele_b"), collapse="    ")
+write(colnames_info_file, file = "my_file.txt", append = TRUE)
+bam_file = alns
+verbose = FALSE
+v=v
+x=x
+gene="PB.1"
+
+
+# genes <- unique(x$gene_id)
+# X<-genes
+# X<-X[1:5]
+# bam_file = alns
+# verbose = TRUE
+# #gene<-"PB.749."
+# oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
+#            bam_file = alns, verbose = TRUE)
+
+
+#  gene <- "PB.4"  # Select the correct gene
+# new_seqs <- generate_variant_transcripts(v = v,x = x,bam_file = alns, gene = gene, verbose = TRUE)
+   
 
 (test_variant_seqs_1 <- c("SNP -",test_variant(x, gene="PB.22", which_transcript="PB.22.1" ,ex_seq="ATGTAGATGGGCCCGTC" , v = v,x = x,
                              bam_file = alns, verbose = FALSE), "the ref seq was ATGTAGATGGGCCCGTC and we know: chr1:1319461_C/G"))
@@ -85,17 +110,17 @@ profvis({
 
 # #all_genes<-unique(x$gene_id) # to get all genes
 # 
-#  txdb <- makeTxDbFromGRanges(x)
-#  bb<-(genes(txdb))$gene_id # to get all genes
-#  X<-sapply(bb,paste0,".",USE.NAMES=F) # to get all genes
-#  X<-X[1:10]
-# bam_file = alns
-# verbose = TRUE
-# #gene<-"PB.749."
-# oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
-#           bam_file = alns, verbose = TRUE)
-# oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
-#                       bam_file = alns, verbose = TRUE)
+ txdb <- makeTxDbFromGRanges(x)
+ bb<-(genes(txdb))$gene_id # to get all genes
+ X<-sapply(bb,paste0,".",USE.NAMES=F) # to get all genes
+ X<-X[1:10]
+bam_file = alns
+verbose = TRUE
+#gene<-"PB.749."
+oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
+          bam_file = alns, verbose = TRUE)
+oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
+                      bam_file = alns, verbose = TRUE)
 # 
 library(BiocParallel)
 genes <- unique(x$gene_id)

@@ -167,10 +167,11 @@ generate_variant_transcripts <- function(v, x,
     for (i in 1:length(pop)) {
       m[names(pop)[i], unique(pop[[i]])] <- 1
     }
-    
+    ##m_1 OK
     # remove reads that never overlap
     keep <- rowSums(m)>0
-    m <- m[keep,]
+    m <- m[keep,,drop=FALSE]
+    #m_2 NOT OK
     ga <- ga[keep]
     
     # remove reads that end right at the variation
@@ -178,6 +179,43 @@ generate_variant_transcripts <- function(v, x,
     
     # narrow all alignments around variation
     df_tot <- narrowal(variation_regs,ga)
+    
+    ###########
+    
+
+    for (p in 1:length(df_tot)) {
+      
+      if(width(variation_regs$REF[p])>length(variation_regs$ALT[p])){ # Deletions
+        
+        for(q in 1:length(df_tot[p][[1]]$seq)){
+          
+          if(df_tot[p][[1]]$seq[q]!=variation_regs$REF[p] && df_tot[p][[1]]$seq[q]!=variation_regs$REF[p] ){
+            
+            read_name <- rownames(df_tot[p][[1]])
+            m[read_name,p]<-0
+            
+          }
+          
+        }
+        
+      }else{ # SNPs, Insertions
+        
+        for(q in 1:length(df_tot[p][[1]]$seq)){
+          
+          if(substring(df_tot[p][[1]]$seq[q],1,width(df_tot[p][[1]]$seq[q])-1)!=variation_regs$REF[p][[1]] && substring(df_tot[p][[1]]$seq[q],1,width(df_tot[p][[1]]$seq[q])-1)!=variation_regs$ALT[p][[1]]){
+            
+            read_name <- rownames(df_tot[p][[1]])
+            m[read_name,p]<-0
+            
+          }
+          
+        }
+        
+      }
+      
+    }
+    
+    
     
     # loop through affected transcripts    
     for (i in seq_len(length(transcripts))) {
@@ -231,7 +269,13 @@ generate_variant_transcripts <- function(v, x,
       
       to_insert <- get_alleles(df1) 
       new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, mtt,ref_base, alt_base)
-      # 
+      
+      
+      # Recording change in transcript
+      new_info_line <- paste(c(tr, paste(nm, collapse=";"), paste(lapply(as.data.frame(variation_regs[nm])[,2], function(u){paste(c(u,u+1), collapse="-")}),collapse=";"), paste(lapply(as.array(start(mtt)), function(u){paste(c(u,u+1), collapse="-")}),collapse=";"), paste(lapply(to_insert, function(u){paste(as.array(u),collapse=";")}), collapse = "    ")), collapse="    ")
+      
+      write(new_info_line, file = "my_file.txt", append = TRUE)
+      
     }
   }
   
