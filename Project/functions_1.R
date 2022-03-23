@@ -188,40 +188,6 @@ generate_variant_transcripts <- function(v, x,
     ###########
     apoth<-m
 
-    # for (p in 1:length(df_tot)) {
-    #   
-    #   if(width(variation_regs$REF[p])>length(variation_regs$ALT[p])){ # Deletions
-    #     
-    #     for(q in 1:length(df_tot[p][[1]]$seq)){
-    #       
-    #       if(df_tot[p][[1]]$seq[q]!=variation_regs$REF[p] && df_tot[p][[1]]$seq[q]!=variation_regs$REF[p] ){
-    #         
-    #         read_name <- rownames(df_tot[p][[1]])[q]
-    #         m[read_name,p]<-0
-    #         
-    #       }
-    #       
-    #     }
-    #     
-    #   }else{ # SNPs, Insertions
-    #     
-    #     for(q in 1:length(df_tot[p][[1]]$seq)){
-    #       
-    #       if(substring(df_tot[p][[1]]$seq[q],1,width(df_tot[p][[1]]$seq[q])-1)!=as.character(variation_regs$REF[p][[1]]) && substring(df_tot[p][[1]]$seq[q],1,width(df_tot[p][[1]]$seq[q])-1)!=as.character(variation_regs$ALT[p][[1]])){
-    #         
-    #         read_name <- rownames(df_tot[p][[1]])[q]
-    #         m[read_name,p]<-0
-    #         
-    #       }
-    #       
-    #     }
-    #     
-    #   }
-    #   
-    # }
-    
-    
-    
     # loop through affected transcripts    
     for (i in seq_len(length(transcripts))) {
       tr <- transcripts[i]
@@ -243,6 +209,7 @@ generate_variant_transcripts <- function(v, x,
       
       df_tot_specs <- lapply(df_tot_spec, function(u){as.data.frame(u)[rownames(as.data.frame(u)) %in% rownames(m2),]})
       
+      apoth2<-m2
       
       for (p in 1:length(m2)) {
         
@@ -265,6 +232,12 @@ generate_variant_transcripts <- function(v, x,
         }
       }      
 
+      w2 <- rowSums(m2[, nm, drop = FALSE]) == length(m2)
+      rds2 <- rownames(m2)[w2]
+      m2 <- subset(m2, rownames(m2) %in% rds2)
+      
+      
+      
       tr_gr <- x_ex[x_ex$transcript_id == tr]
 
       
