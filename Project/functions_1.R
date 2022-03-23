@@ -112,9 +112,15 @@ get_alleles <- function(df){
   alleles <- as.data.frame(z) %>% group_by_all %>% count %>%
     arrange(desc(n)) 
   # take top 2 alleles, transpose, return list
-  alleles[seq_len(min(2,nrow(alleles))),] %>%
+  alle <- alleles[seq_len(min(2,nrow(alleles))),] %>%
     select(-n) %>% as.data.frame %>% 
     t %>% as.data.frame %>% as.list
+  alle2_length<-vector()
+  alle1_length <- length(which(apply(z, 1, function(x) identical(as.character(x), alle[[1]]))))
+  if(length(alle)==2){alle2_length <- length(which(apply(z, 1, function(x) identical(as.character(x), alle[[2]]))))}
+  alle_lengths <- c(alle1_length, alle2_length)
+  
+  list(alle, alle_lengths)
 }
 
 generate_variant_transcripts <- function(v, x,
@@ -261,12 +267,13 @@ generate_variant_transcripts <- function(v, x,
       
       #get alleles and insert them into reference sequence
       
-      to_insert <- get_alleles(df1) 
+      allele_info <- get_alleles(df1) 
+      to_insert <- allele_info[1][[1]]
       new_seqs[[i]] <- seqs_with_var(to_insert, ref_seq, mtt,ref_base, alt_base)
       
       
       # Recording change in transcript
-      new_info_line <- paste(c(tr, paste(nm, collapse=";"), paste(lapply(as.data.frame(variation_regs[nm])[,2], function(u){paste(c(u,u+1), collapse="-")}),collapse=";"), paste(lapply(as.array(start(mtt)), function(u){paste(c(u,u+1), collapse="-")}),collapse=";"), paste(lapply(to_insert, function(u){paste(as.array(u),collapse=";")}), collapse = "    ")), collapse="    ")
+      new_info_line <- paste(c(tr, paste(nm, collapse=";"), paste(lapply(as.data.frame(variation_regs[nm])[,2], function(u){paste(c(u,u+1), collapse="-")}),collapse=";"), paste(lapply(as.array(start(mtt)), function(u){paste(c(u,u+1), collapse="-")}),collapse=";"), paste(lapply(to_insert, function(u){paste(as.array(u),collapse=";")}), collapse = "    "),allele_info[[2]]),  collapse="    ")
       
       write(new_info_line, file = "my_file.txt", append = TRUE)
       

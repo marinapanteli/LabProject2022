@@ -29,21 +29,21 @@ if (file.exists(fn)) {
   file.remove(fn)
 }
 
-colnames_info_file <- paste(c("Transcript", "Ref/Alt_Nucleotide", "Genomic_Location", "Transcript_Location", "Allele_a", "Allele_b"), collapse="    ")
+colnames_info_file <- paste(c("Transcript", "Ref/Alt_Nucleotide", "Genomic_Location", "Transcript_Location", "Allele_a", "Allele_b", "#Reads_Allele_a","#Reads_Allele_b"), collapse="    ")
 write(colnames_info_file, file = "my_file.txt", append = TRUE)
 bam_file = alns
 verbose = FALSE
 v=v
 x=x
- gene="PB.22"
+#  gene="PB.749"
 # 
-# genes <- unique(x$gene_id)
-# X<-genes
-# X<-X[1:5]
+ genes <- unique(x$gene_id)
+ X<-genes
+ X<-X[1:5]
 # bam_file = alns
 # verbose = TRUE
-# oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
-#            bam_file = alns, verbose = TRUE)
+oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
+           bam_file = alns, verbose = TRUE)
 
 
 #  gene <- "PB.4"  # Select the correct gene
