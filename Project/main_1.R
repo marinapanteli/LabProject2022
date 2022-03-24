@@ -35,11 +35,11 @@ bam_file = alns
 verbose = FALSE
 v=v
 x=x
-#  gene="PB.749"
+#gene="PB.4"
 # 
  genes <- unique(x$gene_id)
  X<-genes
- X<-X[1:5]
+ X<-X[1:10]
 # bam_file = alns
 # verbose = TRUE
 oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
