@@ -120,6 +120,8 @@ generate_variant_transcripts <- function(v, x, gene, bam_file = "aln_s.bam",
   transcripts <- unique(S4Vectors::second(fop)$transcript_id)
   
   new_seqs <- vector("list", length(transcripts))
+
+  for_next_loop <- vector()
   
   #check that there IS an overlap
   if (!isEmpty(pintersect(fop))) {
@@ -175,14 +177,30 @@ generate_variant_transcripts <- function(v, x, gene, bam_file = "aln_s.bam",
       if (verbose)
         message(tr)
       
+      if (all(m == 0)) {
+        for_next_loop <- c(for_next_loop,tr)
+        next
+      }
+      
       f <- S4Vectors::first(fop)[S4Vectors::second(fop)$transcript_id == tr]
       nm <- names(f)
       m1 <- as.data.frame(m)[nm]
+      
+      if (all(m1 == 0)) {
+        for_next_loop <- c(for_next_loop,tr)
+        next
+      }
       
       # only take reads that overlap all variation pos. of this transcript
       w <- rowSums(m1[ , nm, drop = FALSE]) == length(nm)
       rds <- rownames(m1)[w]
       m2 <- subset(m1, rownames(m1) %in% rds)
+      
+      if (all(sum(isEmpty(m2)) == length(m1))) {
+        for_next_loop <- c(for_next_loop,tr)
+        next
+      }
+      
       
       variation_spec <- variation_regs[names(variation_regs)%in%colnames(m2)]
       
@@ -289,6 +307,7 @@ generate_variant_transcripts <- function(v, x, gene, bam_file = "aln_s.bam",
   transcripts_unmod <- setdiff(names(x_exs), transcripts)
   seqs_unmod <- vector("list", length(transcripts_unmod))
   
+  transcripts_unmod <- c(for_next_loop, transcripts_unmod)
   # check for transcripts with NO overlap
   
   if (!isEmpty(transcripts_unmod)) {
