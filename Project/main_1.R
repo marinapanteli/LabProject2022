@@ -35,7 +35,7 @@ bam_file = alns
 verbose = FALSE
 v=v
 x=x
-#gene="PB.4"
+gene="PB.4"
 # 
  genes <- unique(x$gene_id)
  X<-genes
