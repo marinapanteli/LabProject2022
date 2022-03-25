@@ -1,21 +1,3 @@
-# get_read_ranges <- function(ga) {
-#   
-#   rngs <- cigarRangesAlongReferenceSpace(cigar(ga),
-#                                          pos = start(ga),
-#                                          drop.empty.ranges = FALSE,
-#                                          N.regions.removed = FALSE,
-#                                          with.ops = TRUE,
-#                                          reduce.ranges = FALSE)
-#   names(rngs) <- names(ga)
-#   # remove 'N' ranges
-#   rngs <- lapply(rngs, function(u) {
-#     nm <- names(u)
-#     names(u) <- NULL
-#     u[nm != "N"]
-#   })
-#   IRangesList(rngs)
-# }
-
 get_read_ranges <- function(ga) {
   nm <- names(ga)
   rngs <- cigarRangesAlongReferenceSpace(cigar(ga), 
@@ -128,7 +110,7 @@ generate_variant_transcripts <- function(v, x, gene, bam_file = "aln_s.bam",
     message(paste0("working on '", gene, "'"))
   
   # extract exons for given gene  
-  x_ex <- x[x$gene_id == gene] ##
+  x_ex <- x[x$gene_id == gene] 
   # split into transcripts
   x_exs <- split(x_ex, x_ex$transcript_id)
   
@@ -186,7 +168,7 @@ generate_variant_transcripts <- function(v, x, gene, bam_file = "aln_s.bam",
     # narrow all alignments around variation
     df_tot <- narrowal(variation_regs,ga)
     
-    apoth<-m
+    #apoth<-m
 
     # loop through affected transcripts    
     for (i in seq_len(length(transcripts))) {
@@ -225,32 +207,32 @@ generate_variant_transcripts <- function(v, x, gene, bam_file = "aln_s.bam",
       df_tot_specs <- lapply(df_tot_spec, function(u){
         as.data.frame(u)[rownames(as.data.frame(u)) %in% rownames(m2), ]})
       
-      apoth2<-m2
-      
+      #apoth2<-m2
+
       for (p in 1:length(m2)) {
-       
-        for (q in 1:dim(m2)[1]) {
-          
+
           if (width(variation_spec$REF[p])>
               length(variation_spec$ALT[p])) { # Deletions
-            
-            read_nuc <- df_tot_specs[[p]][q]
-            
+
+            read_nuc <- df_tot_specs[[p]]
+
           } else {
-              
-            read_nuc <- substring(df_tot_specs[[p]][q],
-                                  1,nchar(df_tot_specs[[p]][q])-1)
+
+            read_nuc <- substring(df_tot_specs[[p]],
+                                  1,nchar(df_tot_specs[[p]])-1)
           }
-          
-          if (read_nuc != as.character(variation_spec$REF[p]) &&
-              read_nuc != as.character(variation_spec$ALT[[p]])) {
-            
-            m2[q,p] <- 0
-            
+
+           for (q in 1:dim(m2)[1]) {
+
+              if (read_nuc[q] != as.character(variation_spec$REF[p]) &&
+              read_nuc[q] != as.character(variation_spec$ALT[[p]])) {
+
+               m2[q,p] <- 0
+
           }
         }
-      }      
-
+      }
+    
       w2 <- rowSums(m2[ , nm, drop = FALSE]) == length(m2)
       rds2 <- rownames(m2)[w2]
       m2 <- subset(m2, rownames(m2) %in% rds2)

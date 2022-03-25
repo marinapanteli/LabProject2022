@@ -50,8 +50,8 @@ oo<-lapply(X, generate_variant_transcripts,v=v,x=x,
 # new_seqs <- generate_variant_transcripts(v = v,x = x,bam_file = alns, gene = gene, verbose = TRUE)
    
 
-(test_variant_seqs_1 <- c("SNP -",test_variant(x, gene="PB.22", which_transcript="PB.22.1" ,ex_seq="ATGTAGATGGGCCCGTC" , v = v,x = x,
-                             bam_file = alns, verbose = FALSE), "the ref seq was ATGTAGATGGGCCCGTC and we know: chr1:1319461_C/G"))
+system.time({(test_variant_seqs_1 <- c("SNP -",test_variant(x, gene="PB.22", which_transcript="PB.22.1" ,ex_seq="ATGTAGATGGGCCCGTC" , v = v,x = x,
+                             bam_file = alns, verbose = FALSE), "the ref seq was ATGTAGATGGGCCCGTC and we know: chr1:1319461_C/G"))})
   
 (test_variant_seqs_2 <- c("SNP +",test_variant(x, gene="PB.749", which_transcript="PB.749.1" ,ex_seq="GGCCCGGATGAGCAGACTCCTGT" , v = v,x = x,
                                                bam_file = alns, verbose = FALSE), "the ref seq was GGCCCGGATGAGCAGACTCCTGT and we know: chr1:95117534_G/C"))
