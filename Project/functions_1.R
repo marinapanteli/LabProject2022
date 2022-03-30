@@ -222,15 +222,10 @@ generate_variant_transcripts <- function(v, x, gene, bam_file = "aln_s.bam",
                                   1,nchar(df_tot_specs[[p]])-1)
           }
 
-           for (q in 1:dim(m2)[1]) {
-
-              if (read_nuc[q] != as.character(variation_spec$REF[p]) &&
-              read_nuc[q] != as.character(variation_spec$ALT[[p]])) {
-
-               m2[q,p] <- 0
-
-          }
-        }
+        w <- read_nuc != as.character(variation_spec$REF[p]) &
+        read_nuc != as.character(variation_spec$ALT[[p]])
+        
+        m2[w,p] <- 0
       }
     
       w2 <- rowSums(m2[ , nm, drop = FALSE]) == length(m2)
