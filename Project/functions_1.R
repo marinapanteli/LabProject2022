@@ -115,10 +115,10 @@ generate_variant_transcripts <- function(v, x, gene, bam_file = "aln_s.bam",
   x_exs <- split(x_ex, x_ex$transcript_id)
   
   # find overlaps b/w variation and this gene
-  fop <- findOverlapPairs(rowRanges(v), x_ex) 
+  fop <- findOverlapPairs(rowRanges(v), x_ex, type="within") 
   transcripts <- unique(S4Vectors::second(fop)$transcript_id)
   
-  new_seqs <- vector("list", length(transcripts))
+  new_seqs <- vector("list") #, length(transcripts))
 
   for_next_loop <- vector()
   
@@ -227,11 +227,22 @@ generate_variant_transcripts <- function(v, x, gene, bam_file = "aln_s.bam",
         
         m2[w,p] <- 0
       }
+      
+      if (all(isEmpty(m2))==TRUE) {
+        for_next_loop <- c(for_next_loop,tr)
+        next
+      }
     
       w2 <- rowSums(m2[ , nm, drop = FALSE]) == length(m2)
       rds2 <- rownames(m2)[w2]
       m2 <- subset(m2, rownames(m2) %in% rds2)
      
+      
+      if (all(isEmpty(m2))==TRUE) {
+        for_next_loop <- c(for_next_loop,tr)
+        next
+      }
+      
       tr_gr <- x_ex[x_ex$transcript_id == tr]
       
       strand(tr_gr) <- "+"
@@ -299,7 +310,7 @@ generate_variant_transcripts <- function(v, x, gene, bam_file = "aln_s.bam",
   
   
   transcripts_unmod <- setdiff(names(x_exs), transcripts)
-  seqs_unmod <- vector("list", length(transcripts_unmod))
+  seqs_unmod <- vector("list") #, length(transcripts_unmod))
   
   transcripts_unmod <- c(for_next_loop, transcripts_unmod)
   # check for transcripts with NO overlap
@@ -329,12 +340,17 @@ generate_variant_transcripts <- function(v, x, gene, bam_file = "aln_s.bam",
   
   
   if (as.character(strand(x_ex))[1] == '-') {
-    seqs_unmod <- lapply(seqs_unmod, function(u) {
-      rev_unmod <- reverseComplement(u)
-    }) 
-    new_seqs <- lapply(new_seqs, function(u) {
-      rev_unmod <- reverseComplement(u)
-    })
+    if(length(seqs_unmod)!=0){
+      seqs_unmod <- lapply(seqs_unmod, function(u) {
+        rev_unmod <- reverseComplement(u)
+      })
+    } 
+    if(length(new_seqs)!=0){
+      new_seqs[sapply(new_seqs,is.null)]<-NULL
+      new_seqs <- lapply(new_seqs, function(u) {
+        rev_unmod <- reverseComplement(u)
+      })
+    }
   }
   
   new_seqs <- append(new_seqs, seqs_unmod)
